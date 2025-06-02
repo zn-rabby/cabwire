@@ -1,7 +1,6 @@
 import { Schema, model, Model, Document } from 'mongoose';
 import { ICarService } from './car.interface';
 
-// Schema with only the input fields you mentioned
 const CarServiceSchema = new Schema<ICarService>({
   name: { type: String, required: true },
   type: {
@@ -18,7 +17,7 @@ const CarServiceSchema = new Schema<ICarService>({
   },
 });
 
-export const CarServiceModel: Model<ICarService> = model<ICarService>(
+export const CarService: Model<ICarService> = model<ICarService>(
   'CarService',
   CarServiceSchema
 );
