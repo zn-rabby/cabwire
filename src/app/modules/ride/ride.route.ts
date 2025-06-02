@@ -1,0 +1,20 @@
+import express from 'express';
+import { USER_ROLES } from '../../../enums/user';
+import auth from '../../middlewares/auth';
+import { RideController } from './ride.controller';
+
+const router = express.Router();
+
+router
+  .route('/create-ride')
+  .post(
+    auth(
+      USER_ROLES.ADMIN,
+      USER_ROLES.DRIVER,
+      USER_ROLES.USER,
+      USER_ROLES.SUPER_ADMIN
+    ),
+    RideController.createRide
+  );
+
+export const RideRoutes = router;

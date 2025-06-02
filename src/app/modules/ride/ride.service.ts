@@ -1,0 +1,114 @@
+// ride.service.ts
+
+import { IRide } from './ride.interface';
+import { Ride } from './ride.model';
+import ApiError from '../../../errors/ApiError';
+import { StatusCodes } from 'http-status-codes';
+import { Types } from 'mongoose';
+import { Category } from '../category/category.model';
+import { Service } from '../service/service.model';
+import { calculateFare } from './ride.utils';
+
+// ✅ Helper to calculate distance using lat/lng
+const getDistanceFromLatLonInKm = (
+  pickup: { lat: number; lng: number },
+  dropoff: { lat: number; lng: number }
+): number => {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+
+  const R = 6371; // Earth radius in km
+  const dLat = toRad(dropoff.lat - pickup.lat);
+  const dLon = toRad(dropoff.lng - pickup.lng);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(pickup.lat)) *
+      Math.cos(toRad(dropoff.lat)) *
+      Math.sin(dLon / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const createRideToDB = async (
+  payload: Partial<IRide>,
+  userObjectId: Types.ObjectId
+) => {
+  const pickup = payload.pickupLocation;
+  const dropoff = payload.dropoffLocation;
+
+  if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Pickup and dropoff coordinates are required.'
+    );
+  }
+
+  if (typeof payload.duration !== 'number' || payload.duration <= 0) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Duration is required and must be a positive number.'
+    );
+  }
+
+  if (!payload.service || !payload.category) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Service and category IDs are required.'
+    );
+  }
+
+  const service = await Service.findById(payload.service);
+  const category = await Category.findById(payload.category);
+
+  if (!service || !category) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid service or category ID.'
+    );
+  }
+
+  // ✅ Calculate distance
+  const distance = getDistanceFromLatLonInKm(pickup, dropoff);
+
+  // ✅ Calculate fare
+  let fare: number;
+  try {
+    fare = calculateFare({
+      service,
+      category,
+      distance,
+      duration: payload.duration,
+    });
+  } catch (error) {
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Failed to calculate fare: ' +
+        (error instanceof Error ? error.message : '')
+    );
+  }
+
+  const rideData: Partial<IRide> = {
+    ...payload,
+    distance,
+    fare,
+    userId: userObjectId,
+    rideStatus: 'requested',
+    paymentStatus: 'pending',
+  };
+
+  const ride = await Ride.create(rideData);
+
+  if (!ride) {
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Failed to create ride.'
+    );
+  }
+
+  return ride;
+};
+
+export const RideService = {
+  createRideToDB,
+};
