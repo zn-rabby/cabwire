@@ -6,9 +6,9 @@ const serviceSchema = new Schema<IService, ServiceModel>(
     name: {
       type: String,
       enum: [
+        'car',
         'rental-car',
-        'emergency-car-booking',
-        'car-booking',
+        'cabwire-share',
         'package-delivery',
       ],
       required: true,

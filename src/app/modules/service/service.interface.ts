@@ -2,9 +2,10 @@ import { Model, Types } from 'mongoose';
 
 export type IService = {
   name:
+    | 'car'
+    | 'emergency-car'
     | 'rental-car'
-    | 'emergency-car-booking'
-    | 'car-booking'
+    | 'cabwire-share'
     | 'package-delivery';
 
   // category: Types.ObjectId;
