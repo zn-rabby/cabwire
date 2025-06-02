@@ -1,7 +1,7 @@
 import { Model, Types } from 'mongoose';
 
 export type IService = {
-  name: 'car' | 'emergency-car' | 'rental-car';
+  serviceName: 'car' | 'emergency-car' | 'rental-car';
 
   // category: Types.ObjectId;
   image: string;

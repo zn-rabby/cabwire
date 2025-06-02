@@ -29,12 +29,14 @@ export const calculateFare = ({
 
   let totalFare = baseFare + basePrice;
 
-  if (['car', 'emergency-car'].includes(service.name)) {
+  if (['car', 'emergency-car'].includes(service.serviceName)) {
     const distanceFare = dist * ratePerKm;
     totalFare += distanceFare;
-  } else if (service.name === 'rental-car') {
+    console.log('distanceFare', distanceFare);
+  } else if (service.serviceName === 'rental-car') {
     const durationInHours = dur / 60;
     const timeFare = durationInHours * ratePerHour;
+    console.log('timeFare=', timeFare);
     totalFare += timeFare;
   } else {
     throw new Error('Unsupported service type');

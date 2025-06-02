@@ -5,7 +5,7 @@ import { Category } from './category.model';
 
 // Create Category
 const createCategoryToDB = async (payload: ICategory): Promise<ICategory> => {
-  const isExist = await Category.findOne({ name: payload.name });
+  const isExist = await Category.findOne({ name: payload.categoryName });
 
   if (isExist) {
     throw new ApiError(

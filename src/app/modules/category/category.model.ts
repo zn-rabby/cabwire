@@ -4,7 +4,7 @@ import { ICategory } from './category.interface';
 // 2. Schema for Category
 const CategorySchema = new Schema<ICategory>(
   {
-    name: {
+    categoryName: {
       type: String,
       enum: ['economy', 'premium', 'luxury'],
       required: true,

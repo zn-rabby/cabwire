@@ -3,7 +3,7 @@ import { IService, ServiceModel } from './service.interface';
 
 const serviceSchema = new Schema<IService, ServiceModel>(
   {
-    name: {
+    serviceName: {
       type: String,
       enum: ['car', 'emergency-car', 'rental-car'],
       required: true,
