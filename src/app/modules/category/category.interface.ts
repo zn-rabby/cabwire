@@ -2,7 +2,10 @@ import { ObjectId } from 'mongoose';
 
 export interface ICategory {
   _id: ObjectId;
-  name: 'economy' | 'premium' | 'luxury';
+  name:
+    | 'car'
+    | 'emergency-car' ;
+  type: 'economy' | 'premium' | 'luxury';
   basePrice: number; // Base fare for this category
   ratePerKm: number; // Fare per kilometer
   ratePerHour: number;
