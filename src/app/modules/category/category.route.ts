@@ -13,7 +13,7 @@ router
     CategoryController.createCategory
   )
   .get(
-    // auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     CategoryController.getAllCategories
   );
 

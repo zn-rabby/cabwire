@@ -23,7 +23,8 @@ const apiRoutes = [
     path: '/auth',
     route: AuthRoutes,
   },
-  // logic
+
+  // service 
   {
     path: '/category',
     route: CategoryRoutes,
