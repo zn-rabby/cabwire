@@ -98,6 +98,7 @@ const createRideToDB = async (
   };
 
   const ride = await Ride.create(rideData);
+  console.log(ride);
 
   if (!ride) {
     throw new ApiError(
@@ -106,7 +107,8 @@ const createRideToDB = async (
     );
   }
 
-  return ride;
+  // return ride;
+  return null;
 };
 
 export const RideService = {

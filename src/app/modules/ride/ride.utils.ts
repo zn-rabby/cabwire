@@ -1,4 +1,5 @@
 // ride.utils.ts
+
 import { ICategory } from '../category/category.interface';
 import { IService } from '../service/service.interface';
 
@@ -15,7 +16,6 @@ export const calculateFare = ({
   distance = 0,
   duration = 0,
 }: FareCalculationInput): number => {
-  // Defensive checks for number fields; if missing, use 0
   const ratePerKm =
     typeof category.ratePerKm === 'number' ? category.ratePerKm : 0;
   const ratePerHour =
@@ -24,21 +24,28 @@ export const calculateFare = ({
   const basePrice =
     typeof category.basePrice === 'number' ? category.basePrice : 0;
 
-  // Ensure distance and duration are numbers and >=0
   const dist = typeof distance === 'number' && distance > 0 ? distance : 0;
   const dur = typeof duration === 'number' && duration > 0 ? duration : 0;
 
-  const distanceFare = dist * ratePerKm;
-  const durationFare = (dur / 60) * ratePerHour; // duration is in minutes
+  let totalFare = baseFare + basePrice;
 
-  const totalFare = baseFare + basePrice + distanceFare + durationFare;
+  if (['car', 'emergency-car'].includes(service.name)) {
+    const distanceFare = dist * ratePerKm;
+    totalFare += distanceFare;
+  } else if (service.name === 'rental-car') {
+    const durationInHours = dur / 60;
+    const timeFare = durationInHours * ratePerHour;
+    totalFare += timeFare;
+  } else {
+    throw new Error('Unsupported service type');
+  }
 
-  // Round to 2 decimal places
   const roundedFare = Math.round(totalFare * 100) / 100;
 
   if (isNaN(roundedFare)) {
     throw new Error('Fare calculation resulted in NaN');
   }
 
+  console.log(22, roundedFare);
   return roundedFare;
 };
