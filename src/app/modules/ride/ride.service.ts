@@ -1,5 +1,3 @@
-// ride.service.ts
-
 import { IRide } from './ride.interface';
 import { Ride } from './ride.model';
 import ApiError from '../../../errors/ApiError';
@@ -10,7 +8,7 @@ import { Service } from '../service/service.model';
 import { calculateFare } from './ride.utils';
 import { User } from '../user/user.model';
 
-// find nearest riders 
+// find nearest riders
 const findNearestOnlineRiders = async (location: {
   lat?: number;
   lng?: number;
