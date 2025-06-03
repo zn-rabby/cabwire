@@ -41,7 +41,12 @@ export type IUser = {
   dateOfBirth?: Date;
   driverLicense?: IDriverLicenseInfo;
   driverVehicles?: IDriverVehiclesInfo;
+  isDeleted: boolean;
 };
+
+export interface DeleteAccountPayload {
+  password: string;
+}
 
 export type UserModal = {
   isExistUserById(id: string): any;

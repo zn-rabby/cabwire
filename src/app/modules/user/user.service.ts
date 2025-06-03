@@ -6,7 +6,7 @@ import { emailHelper } from '../../../helpers/emailHelper';
 import { emailTemplate } from '../../../shared/emailTemplate';
 import unlinkFile from '../../../shared/unlinkFile';
 import generateOTP from '../../../util/generateOTP';
-import { IUser } from './user.interface';
+import { DeleteAccountPayload, IUser } from './user.interface';
 import { User } from './user.model';
 import QueryBuilder from '../../builder/QueryBuilder';
 
@@ -73,6 +73,35 @@ const updateProfileToDB = async (
   });
 
   return updateDoc;
+};
+
+const deleteMyAccount = async (id: string, payload: DeleteAccountPayload) => {
+  const user: IUser | null = await User.isExistUserById(id);
+  // console.log(222, user, payload);
+  console.log(user);
+
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+  if (user?.isDeleted) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'This user is deleted');
+  }
+
+  if (!(await User.isMatchPassword(payload.password, user.password))) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Password does not match');
+  }
+
+  const userDeleted = await User.findByIdAndUpdate(
+    id,
+    { isDeleted: true },
+    { new: true }
+  );
+
+  if (!userDeleted) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'user deleting failed');
+  }
+
+  return userDeleted;
 };
 
 // only for user
@@ -184,7 +213,7 @@ const driverStatusUpdate = async (id: string, payload: Partial<IUser>) => {
     throw new ApiError(404, 'User not found!');
   }
 
-  if (user?.role !== "DRIVER") {
+  if (user?.role !== 'DRIVER') {
     throw new ApiError(403, 'Only driver status can be updated!');
   }
   const result = await User.findByIdAndUpdate(id, payload, {
@@ -245,6 +274,7 @@ export const UserService = {
   createUserToDB,
   getUserProfileFromDB,
   updateProfileToDB,
+  deleteMyAccount,
 
   // user
   getAllUserQuery,

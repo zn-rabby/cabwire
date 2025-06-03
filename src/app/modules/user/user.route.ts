@@ -37,6 +37,17 @@ router
     }
   );
 
+router.delete(
+  '/delete-my-account',
+  auth(
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN,
+    USER_ROLES.DRIVER,
+    USER_ROLES.USER
+  ),
+  UserController.deleteMyAccount
+);
+
 //  only for users
 router.get('/all-users', UserController.getAllUsers);
 router.get('/total-users-count', UserController.getTotalUserCount);

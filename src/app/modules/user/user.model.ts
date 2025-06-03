@@ -92,6 +92,10 @@ const userSchema = new Schema<IUser, UserModal>(
       },
       select: 0,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
