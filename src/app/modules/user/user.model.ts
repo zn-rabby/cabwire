@@ -7,8 +7,8 @@ import ApiError from '../../../errors/ApiError';
 import { IUser, UserModal } from './user.interface';
 
 const locationSchema = {
-  lat: { type: Number, required: true },
-  lng: { type: Number, required: true },
+  lat: { type: Number },
+  lng: { type: Number },
   address: { type: String },
 };
 
@@ -30,7 +30,7 @@ const driverVehicleSchema = new Schema(
     vehiclesYear: { type: Date },
     vehiclesRegistrationNumber: { type: Number },
     vehiclesInsuranceNumber: { type: Number },
-    vehiclesPicture: { type: Number },
+    vehiclesPicture: { type: String },
     vehiclesCategory: { type: Number },
   },
   { _id: false }
@@ -42,12 +42,12 @@ const userSchema = new Schema<IUser, UserModal>(
       type: String,
       required: true,
     },
-    location:locationSchema,
-  role: {
-  type: String,
-  enum: Object.values(USER_ROLES),
-  default: USER_ROLES.USER,
-},
+    location: locationSchema,
+    role: {
+      type: String,
+      enum: Object.values(USER_ROLES),
+      default: USER_ROLES.USER,
+    },
     email: {
       type: String,
       required: true,

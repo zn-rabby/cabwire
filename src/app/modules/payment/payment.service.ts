@@ -96,7 +96,7 @@ const createPayment = async (payload: Partial<IPayment>) => {
     sessionUrl: stripeSessionUrl,
     paidAt: paymentStatus === 'paid' ? new Date() : undefined,
   });
-
+  console.log('dd', payment);
   if (!payment) {
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,

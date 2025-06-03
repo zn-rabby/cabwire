@@ -71,6 +71,9 @@ const createRideToDB = async (
   // ✅ Calculate distance
   const distance = getDistanceFromLatLonInKm(pickup, dropoff);
 
+  // TODO:
+  console.log('distance', distance);
+
   // ✅ Calculate fare
   let fare: number;
   try {
@@ -106,9 +109,8 @@ const createRideToDB = async (
       'Failed to create ride.'
     );
   }
-
   // return ride;
-  return null;
+  console.log('ride', ride);
 };
 
 export const RideService = {

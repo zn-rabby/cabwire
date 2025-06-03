@@ -1,7 +1,6 @@
 import { Model } from 'mongoose';
 import { USER_ROLES } from '../../../enums/user';
 
-
 export interface ILocation {
   lat: number;
   lng: number;
@@ -19,19 +18,19 @@ interface IDriverVehiclesInfo {
   vehiclesYear: Date;
   vehiclesRegistrationNumber: Number;
   vehiclesInsuranceNumber: Number;
-  vehiclesPicture: Number;
+  vehiclesPicture: string;
   vehiclesCategory: Number;
 }
 
 export type IUser = {
   name: string;
   role: USER_ROLES;
-  contact: string;
-  email: string;  
+  email: string;
   password: string;
-  location: ILocation;
+  contact?: string;
+  location?: ILocation;
   image?: string;
-  status: 'active' | 'block';
+  status?: 'active' | 'block';
   verified: boolean;
   authentication?: {
     isResetPassword: boolean;

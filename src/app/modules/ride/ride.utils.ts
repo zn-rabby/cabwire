@@ -28,15 +28,16 @@ export const calculateFare = ({
   const dur = typeof duration === 'number' && duration > 0 ? duration : 0;
 
   let totalFare = baseFare + basePrice;
+  console.log('totalFare', baseFare, baseFare, baseFare);
 
   if (['car', 'emergency-car'].includes(service.serviceName)) {
     const distanceFare = dist * ratePerKm;
     totalFare += distanceFare;
-    console.log('distanceFare', distanceFare);
+    // console.log('distanceFare', distanceFare);
   } else if (service.serviceName === 'rental-car') {
     const durationInHours = dur / 60;
     const timeFare = durationInHours * ratePerHour;
-    console.log('timeFare=', timeFare);
+    // console.log('timeFare=', timeFare);
     totalFare += timeFare;
   } else {
     throw new Error('Unsupported service type');
@@ -48,6 +49,7 @@ export const calculateFare = ({
     throw new Error('Fare calculation resulted in NaN');
   }
 
-  console.log(22, roundedFare);
+  console.log('totalFare', totalFare);
+  console.log('roundedFare', roundedFare);
   return roundedFare;
 };
