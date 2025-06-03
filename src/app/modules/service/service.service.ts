@@ -5,8 +5,8 @@ import { Service } from './service.model';
 import unlinkFile from '../../../shared/unlinkFile';
 
 const createServiceToDB = async (payload: IService) => {
-  const { name, image } = payload;
-  const isExistName = await Service.findOne({ name: name });
+  const { serviceName, image } = payload;
+  const isExistName = await Service.findOne({ name: serviceName });
 
   if (isExistName) {
     unlinkFile(image);

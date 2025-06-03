@@ -13,6 +13,7 @@ import { PaymentRoutes } from '../app/modules/payment/payment.route';
 import ContactUsRoutes from '../app/modules/contact/contact.route';
 import { CategoryRoutes } from '../app/modules/category/category.route';
 import { PackageRoutes } from '../app/modules/package/package.route';
+import { CabwireRoutes } from '../app/modules/cabwire/cabwire.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -25,7 +26,7 @@ const apiRoutes = [
     route: AuthRoutes,
   },
 
-  // service 
+  // service
   {
     path: '/category',
     route: CategoryRoutes,
@@ -37,6 +38,10 @@ const apiRoutes = [
   {
     path: '/package',
     route: PackageRoutes,
+  },
+  {
+    path: '/cabwire',
+    route: CabwireRoutes,
   },
   {
     path: '/banner',

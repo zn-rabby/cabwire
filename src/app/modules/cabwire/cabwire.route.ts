@@ -7,13 +7,23 @@ const router = express.Router();
 
 router.post(
   '/create',
-  auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  auth(
+    USER_ROLES.USER,
+    USER_ROLES.DRIVER,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN
+  ),
   CabwireController.createRide
 );
 
 router.patch(
   '/book/:rideId',
-  auth(USER_ROLES.DRIVER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  auth(
+    USER_ROLES.USER,
+    USER_ROLES.DRIVER,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN
+  ),
   CabwireController.bookRide
 );
 
