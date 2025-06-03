@@ -45,7 +45,7 @@ router.delete(
     USER_ROLES.DRIVER,
     USER_ROLES.USER
   ),
-  UserController.deleteMyAccount
+  UserController.deleteProfile
 );
 
 //  only for users

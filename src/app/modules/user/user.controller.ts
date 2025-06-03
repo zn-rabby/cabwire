@@ -5,6 +5,7 @@ import { getSingleFilePath } from '../../../shared/getFilePath';
 import sendResponse from '../../../shared/sendResponse';
 import { UserService } from './user.service';
 import httpStatus from 'http-status';
+// import ApiError from '../../../errors/ApiError';
 
 const createUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -51,13 +52,26 @@ const updateProfile = catchAsync(
   }
 );
 
-const deleteMyAccount = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserService.deleteMyAccount(req.user?.id, req.body);
+//delete profile
+const deleteProfile = catchAsync(async (req, res) => {
+  const { id }: any = req.user;
+  const { password } = req.body;
+  const isUserVerified = await UserService.verifyUserPassword(id, password);
+  if (!isUserVerified) {
+    return sendResponse(res, {
+      success: false,
+      statusCode: StatusCodes.UNAUTHORIZED,
+      message: 'Incorrect password. Please try again.',
+      data: {},
+    });
+  }
+
+  const result = await UserService.deleteUser(id);
 
   sendResponse(res, {
-    statusCode: httpStatus.OK,
     success: true,
-    message: 'User deleted successfully',
+    statusCode: StatusCodes.OK,
+    message: 'Profile deleted successfully',
     data: result,
   });
 });
@@ -195,7 +209,7 @@ export const UserController = {
   createUser,
   getUserProfile,
   updateProfile,
-  deleteMyAccount,
+  deleteProfile,
   // user
   getTotalUserCount,
   getAllUsers,

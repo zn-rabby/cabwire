@@ -74,34 +74,25 @@ const updateProfileToDB = async (
 
   return updateDoc;
 };
-
-const deleteMyAccount = async (id: string, payload: DeleteAccountPayload) => {
-  const user: IUser | null = await User.isExistUserById(id);
-  // console.log(222, user, payload);
-  console.log(user);
-
+const verifyUserPassword = async (userId: string, password: string) => {
+  const user = await User.findById(userId).select('+password');
   if (!user) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found.');
   }
-  if (user?.isDeleted) {
-    throw new ApiError(StatusCodes.FORBIDDEN, 'This user is deleted');
-  }
-
-  if (!(await User.isMatchPassword(payload.password, user.password))) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Password does not match');
-  }
-
-  const userDeleted = await User.findByIdAndUpdate(
-    id,
-    { isDeleted: true },
-    { new: true }
-  );
-
-  if (!userDeleted) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'user deleting failed');
+  const isPasswordValid = await User.isMatchPassword(password, user.password);
+  return isPasswordValid;
+};
+const deleteUser = async (id: string) => {
+  const isExistUser = await User.isExistUserById(id);
+  if (!isExistUser) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  return userDeleted;
+  await User.findByIdAndUpdate(id, {
+    $set: { isDeleted: true },
+  });
+
+  return true;
 };
 
 // only for user
@@ -274,7 +265,8 @@ export const UserService = {
   createUserToDB,
   getUserProfileFromDB,
   updateProfileToDB,
-  deleteMyAccount,
+  deleteUser,
+  verifyUserPassword,
 
   // user
   getAllUserQuery,
