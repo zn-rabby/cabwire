@@ -8,6 +8,40 @@ import { Types } from 'mongoose';
 import { Category } from '../category/category.model';
 import { Service } from '../service/service.model';
 import { calculateFare } from './ride.utils';
+import { User } from '../user/user.model';
+
+// find nearest riders 
+const findNearestOnlineRiders = async (location: {
+  lat?: number;
+  lng?: number;
+}) => {
+  if (
+    !location ||
+    typeof location.lat !== 'number' ||
+    typeof location.lng !== 'number'
+  ) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid or missing lat/lng');
+  }
+
+  const coordinates: [number, number] = [location.lng, location.lat]; // GeoJSON expects [lng, lat]
+
+  const result = await User.find({
+    role: 'DRIVER',
+    isOnline: true,
+    'geoLocation.coordinates': { $ne: [0, 0] },
+    geoLocation: {
+      $near: {
+        $geometry: {
+          type: 'Point',
+          coordinates,
+        },
+        $maxDistance: 5000, // 5 km radius
+      },
+    },
+  });
+
+  return result;
+};
 
 // ✅ Helper to calculate distance using lat/lng
 const getDistanceFromLatLonInKm = (
@@ -114,5 +148,6 @@ const createRideToDB = async (
 };
 
 export const RideService = {
+  findNearestOnlineRiders,
   createRideToDB,
 };

@@ -17,4 +17,6 @@ router
     RideController.createRide
   );
 
+router.post('/nearest-driver', RideController.findNearestOnlineRiders);
+
 export const RideRoutes = router;

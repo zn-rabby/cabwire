@@ -5,6 +5,20 @@ import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
 import { RideService } from './ride.service';
 
+// find nearest driver location
+const findNearestOnlineRiders = catchAsync(async (req, res) => {
+  const { location } = req.body;
+
+  const result = await RideService.findNearestOnlineRiders(location);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Nearest online drivers retrieved successfully',
+    data: result,
+  });
+});
+
 // ride.controller.ts
 const createRide = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
@@ -31,5 +45,6 @@ const createRide = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const RideController = {
+  findNearestOnlineRiders,
   createRide,
 };
