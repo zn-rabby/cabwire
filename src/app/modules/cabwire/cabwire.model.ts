@@ -1,11 +1,11 @@
-import { Schema, model } from 'mongoose'; 
-import { IRide } from './cabwire.interface';
+import { Schema, model } from 'mongoose';
+import { ICabwire } from './cabwire.interface';
 
-const RideSchema = new Schema<IRide>(
+const CabwireSchema = new Schema<ICabwire>(
   {
     driverId: {
       type: Schema.Types.ObjectId,
-      ref: 'User', // Assuming driver is stored in 'User' collection
+      ref: 'User',
       required: true,
     },
     pickupLocation: {
@@ -41,8 +41,8 @@ const RideSchema = new Schema<IRide>(
     },
   },
   {
-    timestamps: true, // Adds createdAt and updatedAt
+    timestamps: true,
   }
 );
 
-export const RideModel = model<IRide>('Ride', RideSchema);
+export const CabwireModel = model<ICabwire>('Cabwire', CabwireSchema);

@@ -1,12 +1,6 @@
 import { Document, Types } from 'mongoose';
 
-export type RideStatus =
-  | 'requested'
-  | 'accepted'
-  | 'ongoing'
-  | 'completed'
-  | 'cancelled';
-
+export type RideStatus = 'requested' | 'accepted' | 'ongoing' | 'completed' | 'cancelled';
 export type PaymentMethod = 'stripe' | 'offline';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
 
@@ -16,17 +10,17 @@ export interface ILocation {
   address?: string;
 }
 
-export interface IRide extends Document {
-  driverId: Types.ObjectId; 
+export interface ICabwire extends Document {
+  driverId: Types.ObjectId;
   pickupLocation: ILocation;
-  dropoffLocation: ILocation; 
-  distance?: number;  
-  duration?: number;  
-  fare?: number;  
-  rideStatus: RideStatus;  
-  setAvailable: number;  
-  lastBookingTime: number;  
+  dropoffLocation: ILocation;
+  distance?: number;
+  duration?: number;
+  fare?: number;
+  rideStatus: RideStatus;
+  setAvailable: number;
+  lastBookingTime: number;
   paymentMethod: PaymentMethod;
-  paymentStatus: PaymentStatus; 
-  perKM: number;  
+  paymentStatus: PaymentStatus;
+  perKM: number;
 }
