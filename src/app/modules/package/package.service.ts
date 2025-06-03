@@ -2,7 +2,7 @@ import { PackageModel } from './package.model';
 import { IPackage } from './package.interface';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
-import { Types } from 'mongoose';
+import { Types } from 'mongoose'; 
 
 // Distance formula
 const getDistanceFromLatLonInKm = (
