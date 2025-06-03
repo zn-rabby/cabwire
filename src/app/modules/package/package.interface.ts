@@ -1,6 +1,6 @@
 import { Document, Types } from 'mongoose';
 
-export type RideStatus = 'requested' | 'accepted' | 'delivered';
+export type packageStatus = 'requested' | 'accepted' | 'delivered';
 
 export type PaymentMethod = 'stripe' | 'offline';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
@@ -25,7 +25,7 @@ export interface IPackage extends Document {
   duration?: number;
   fare?: number;
 
-  rideStatus: RideStatus;
+  packageStatus: packageStatus;
 
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;

@@ -11,4 +11,10 @@ router.post(
   PackageController.createPackage
 );
 
+router.patch(
+  '/accept-package/:packageId',
+  auth(USER_ROLES.DRIVER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  PackageController.acceptPackage
+);
+
 export const PackageRoutes = router;

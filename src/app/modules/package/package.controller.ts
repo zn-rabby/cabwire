@@ -28,6 +28,31 @@ const createPackage = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const acceptPackage = catchAsync(async (req: Request, res: Response) => {
+  const driverId = req.user?.id;
+  const packageId = req.params.packageId;
+
+  if (!driverId) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      success: false,
+      message: 'Unauthorized',
+    });
+  }
+
+  const accepted = await PackageService.acceptPackageByDriver(
+    packageId,
+    new mongoose.Types.ObjectId(driverId)
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Package accepted successfully',
+    data: accepted,
+  });
+});
+
 export const PackageController = {
   createPackage,
+  acceptPackage,
 };

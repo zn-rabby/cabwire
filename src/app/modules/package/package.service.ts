@@ -61,7 +61,7 @@ const createPackageToDB = async (
     userId,
     distance,
     fare,
-    rideStatus: 'requested',
+    packageStatus: 'requested',
     paymentStatus: 'pending',
   };
 
@@ -77,6 +77,32 @@ const createPackageToDB = async (
   return createdPackage;
 };
 
+const acceptPackageByDriver = async (
+  packageId: string,
+  driverId: Types.ObjectId
+) => {
+  const existing = await PackageModel.findOne({ _id: packageId });
+
+  if (!existing) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Package not found');
+  }
+
+  if (existing.packageStatus !== 'requested') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Package is not available for booking'
+    );
+  }
+
+  existing.driverId = driverId;
+  existing.packageStatus = 'accepted';
+  existing.acceptedAt = new Date();
+
+  await existing.save();
+  return existing;
+};
+
 export const PackageService = {
   createPackageToDB,
+  acceptPackageByDriver,
 };

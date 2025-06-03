@@ -25,7 +25,7 @@ const packageSchema = new Schema<IPackage>(
     duration: { type: Number },
     fare: { type: Number },
 
-    rideStatus: {
+    packageStatus: {
       type: String,
       enum: ['requested', 'accepted', 'delivered'],
       default: 'requested',
