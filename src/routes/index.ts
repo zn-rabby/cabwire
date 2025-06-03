@@ -12,6 +12,7 @@ import { BookingRoutes } from '../app/modules/booking/booking.route';
 import { PaymentRoutes } from '../app/modules/payment/payment.route';
 import ContactUsRoutes from '../app/modules/contact/contact.route';
 import { CategoryRoutes } from '../app/modules/category/category.route';
+import { PackageRoutes } from '../app/modules/package/package.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -32,6 +33,10 @@ const apiRoutes = [
   {
     path: '/service',
     route: ServiceRoutes,
+  },
+  {
+    path: '/package',
+    route: PackageRoutes,
   },
   {
     path: '/banner',

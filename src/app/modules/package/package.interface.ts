@@ -15,26 +15,26 @@ export interface IPackage extends Document {
   userId: Types.ObjectId;
   driverId?: Types.ObjectId;
 
-  myPay: string;
-  reciverPay: string;
+  myPay: Types.ObjectId; // ✅ Who is actually paying
+  reciverPay: Types.ObjectId;
 
   pickupLocation: ILocation;
   dropoffLocation: ILocation;
 
-  distance?: number;  
-  duration?: number; 
-  fare?: number;  
+  distance?: number;
+  duration?: number;
+  fare?: number;
 
-  rideStatus: RideStatus;  
+  rideStatus: RideStatus;
 
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
 
-  otp?: string; 
+  otp?: string;
   paymentID?: string;
   orderId?: string;
 
-  acceptedAt?: Date;  
-  pickedUpAt?: Date;  
-  deliveredAt?: Date;  
+  acceptedAt?: Date;
+  pickedUpAt?: Date;
+  deliveredAt?: Date;
 }

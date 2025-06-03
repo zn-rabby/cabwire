@@ -15,8 +15,8 @@ const packageSchema = new Schema<IPackage>(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     driverId: { type: Schema.Types.ObjectId, ref: 'User' },
 
-    myPay: { type: String, required: true },
-    reciverPay: { type: String, required: true },
+    myPay: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    reciverPay: { type: Schema.Types.ObjectId, ref: 'User' },
 
     pickupLocation: { type: locationSchema, required: true },
     dropoffLocation: { type: locationSchema, required: true },
