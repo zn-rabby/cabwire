@@ -5,11 +5,11 @@ const paymentSchema = new Schema<IPayment>(
   {
     rideId: { type: Schema.Types.ObjectId, ref: 'Ride', required: true },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    bookingId: {
-      type: Schema.Types.ObjectId,
-      ref: 'RideBooking',
-      required: true,
-    },
+    // bookingId: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: 'RideBooking',
+    //   required: true,
+    // },
 
     amount: { type: Number, required: true },
 

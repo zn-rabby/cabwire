@@ -6,14 +6,15 @@ import { isValidObjectId } from 'mongoose';
 import Stripe from 'stripe';
 import config from '../../../config';
 import { RideBooking } from '../booking/booking.model';
+import { Ride } from '../ride/ride.model';
 
 const stripe = new Stripe(config.stripe_secret_key as string);
 // const YOUR_DOMAIN = '10.0.70.163:5005'; // replace in production
 
 const createPayment = async (payload: Partial<IPayment>) => {
   // 1️⃣ Validate required IDs
-  if (!payload.bookingId || !isValidObjectId(payload.bookingId)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid bookingId is required');
+  if (!payload.rideId || !isValidObjectId(payload.rideId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid rideId is required');
   }
   if (!payload.userId || !isValidObjectId(payload.userId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid userId is required');
@@ -25,18 +26,16 @@ const createPayment = async (payload: Partial<IPayment>) => {
     );
   }
 
-  // 2️⃣ Fetch booking to get fare and rideId
-  const booking = await RideBooking.findById(payload.bookingId);
-  if (!booking) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'Booking not found');
+  // 2️⃣ Fetch ride info (assuming fare is in Ride model)
+  const ride = await Ride.findById(payload.rideId);
+  if (!ride) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
   }
 
-  const amount = booking.fare;
+  const amount = ride.fare;
   if (!amount || amount <= 0) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare amount');
   }
-
-  const rideId = booking.rideId;
 
   // 3️⃣ Payment logic
   let paymentStatus: 'pending' | 'paid' | 'failed' = 'pending';
@@ -53,11 +52,7 @@ const createPayment = async (payload: Partial<IPayment>) => {
             currency: 'usd',
             product_data: {
               name: 'Ride Fare',
-              description: `Payment for ride ID: ${rideId}`,
-              metadata: {
-                rideId: rideId.toString(),
-                userId: payload.userId.toString(),
-              },
+              description: `Payment for ride ID: ${payload.rideId}`,
             },
             unit_amount: Math.round(amount * 100),
           },
@@ -67,9 +62,8 @@ const createPayment = async (payload: Partial<IPayment>) => {
       success_url: 'https://example.com',
       cancel_url: 'https://example.com',
       metadata: {
-        rideId: rideId.toString(),
+        rideId: payload.rideId.toString(),
         userId: payload.userId.toString(),
-        bookingId: payload.bookingId.toString(),
         amount: amount.toString(),
         method: payload.method,
       },
@@ -86,9 +80,8 @@ const createPayment = async (payload: Partial<IPayment>) => {
 
   // 4️⃣ Create Payment
   const payment = await Payment.create({
-    rideId,
+    rideId: payload.rideId,
     userId: payload.userId,
-    bookingId: payload.bookingId,
     amount,
     method: payload.method,
     status: paymentStatus,
@@ -96,7 +89,7 @@ const createPayment = async (payload: Partial<IPayment>) => {
     sessionUrl: stripeSessionUrl,
     paidAt: paymentStatus === 'paid' ? new Date() : undefined,
   });
-  console.log('dd', payment);
+
   if (!payment) {
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
