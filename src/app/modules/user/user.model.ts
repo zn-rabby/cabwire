@@ -100,6 +100,10 @@ const userSchema = new Schema<IUser, UserModal>(
       },
       select: 0,
     },
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
     isDeleted: {
       type: Boolean,
       default: false,

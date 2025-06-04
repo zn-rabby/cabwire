@@ -69,7 +69,7 @@ const createRideToDB = async (
   const pickup = payload.pickupLocation;
   const dropoff = payload.dropoffLocation;
 
-  // ✅ Validate pickup & dropoff coordinates
+  // Validate pickup & dropoff
   if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -77,7 +77,7 @@ const createRideToDB = async (
     );
   }
 
-  // ✅ Validate duration
+  // Validate duration
   if (typeof payload.duration !== 'number' || payload.duration <= 0) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -85,7 +85,7 @@ const createRideToDB = async (
     );
   }
 
-  // ✅ Validate service & category
+  // Validate service & category
   if (!payload.service || !payload.category) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -93,7 +93,7 @@ const createRideToDB = async (
     );
   }
 
-  // ✅ Fetch service & category data
+  // Fetch service & category
   const [service, category] = await Promise.all([
     Service.findById(payload.service),
     Category.findById(payload.category),
@@ -106,10 +106,10 @@ const createRideToDB = async (
     );
   }
 
-  // ✅ Calculate distance
+  // Calculate distance
   const distance = getDistanceFromLatLonInKm(pickup, dropoff);
 
-  // ✅ Calculate fare
+  // Calculate fare
   let fare: number;
   try {
     fare = calculateFare({
@@ -126,33 +126,50 @@ const createRideToDB = async (
     );
   }
 
-  // ✅ Prepare ride data
-  const rideData: Partial<IRide> = {
+  // Create ride
+  const ride = await Ride.create({
     ...payload,
+    userId: userObjectId,
     distance,
     fare,
-    userId: userObjectId,
     rideStatus: 'requested',
     paymentStatus: 'pending',
-  };
+  });
 
-  // ✅ Create ride
-  const ride = await Ride.create(rideData);
+  // Find nearest drivers (within 5km)
+  const nearestDrivers = await findNearestOnlineRiders({
+    lat: pickup.lat,
+    lng: pickup.lng,
+  });
 
-  // ✅ Access global io
+  if (!nearestDrivers.length) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      'No available drivers near your pickup location.'
+    );
+  }
+
+  // Send ride request to nearby drivers via socket
   const io = global.io;
 
-  if (io && ride.pickupLocation) {
-    io.emit('ride-requested', {
-      rideId: ride._id,
-      userId: ride.userId,
-      coordinates: ride.pickupLocation,
-      status: ride.rideStatus,
+  if (io && ride._id) {
+    nearestDrivers.forEach((driver) => {
+      io.to(driver._id.toString()).emit('ride-requested', {
+        rideId: ride._id,
+        userId: ride.userId,
+        pickupLocation: ride.pickupLocation,
+        dropoffLocation: ride.dropoffLocation,
+        status: ride.rideStatus,
+        fare: ride.fare,
+        distance: ride.distance,
+        duration: ride.duration,
+      });
     });
   }
 
   return ride;
 };
+
 
 export const RideService = {
   findNearestOnlineRiders,

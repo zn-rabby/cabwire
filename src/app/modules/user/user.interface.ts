@@ -39,6 +39,7 @@ export type IUser = {
   dateOfBirth?: Date;
   driverLicense?: IDriverLicenseInfo;
   driverVehicles?: IDriverVehiclesInfo;
+  isOnline: boolean;
   isDeleted: boolean;
 };
 
