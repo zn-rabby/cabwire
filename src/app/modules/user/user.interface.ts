@@ -1,12 +1,6 @@
 import { Model } from 'mongoose';
 import { USER_ROLES } from '../../../enums/user';
 
-export interface ILocation {
-  lat: number;
-  lng: number;
-  address?: string;
-}
-
 interface IDriverLicenseInfo {
   licenseNumber: number;
   licenseExpiryDate: Date;
@@ -28,7 +22,11 @@ export type IUser = {
   email: string;
   password: string;
   contact?: string;
-  location?: ILocation;
+  location?: string;
+  geoLocation?: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
   image?: string;
   status?: 'active' | 'block';
   verified: boolean;

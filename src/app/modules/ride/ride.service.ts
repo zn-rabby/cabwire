@@ -25,7 +25,7 @@ const findNearestOnlineRiders = async (location: {
 
   const result = await User.find({
     role: 'DRIVER',
-    isOnline: true,
+    // isOnline: true,
     'geoLocation.coordinates': { $ne: [0, 0] },
     geoLocation: {
       $near: {

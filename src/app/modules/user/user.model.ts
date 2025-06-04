@@ -6,12 +6,6 @@ import { USER_ROLES } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { IUser, UserModal } from './user.interface';
 
-const locationSchema = {
-  lat: { type: Number },
-  lng: { type: Number },
-  address: { type: String },
-};
-
 // Driver license sub-schema
 const driverLicenseSchema = new Schema(
   {
@@ -42,7 +36,21 @@ const userSchema = new Schema<IUser, UserModal>(
       type: String,
       required: true,
     },
-    location: locationSchema,
+    location: {
+      type: String,
+    },
+    geoLocation: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        default: 'Point',
+      },
+      coordinates: {
+        type: [Number],
+        default: [0, 0],
+        index: '2dsphere',
+      },
+    },
     role: {
       type: String,
       enum: Object.values(USER_ROLES),
@@ -99,7 +107,7 @@ const userSchema = new Schema<IUser, UserModal>(
   },
   { timestamps: true }
 );
-
+userSchema.index({ geoLocation: '2dsphere' });
 //exist user check
 userSchema.statics.isExistUserById = async (id: string) => {
   const isExist = await User.findById(id);
