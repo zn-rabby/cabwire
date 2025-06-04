@@ -282,6 +282,27 @@ const requestCloseRide = async (rideId: string, driverId: string) => {
   return { rideId: ride._id, otpSent: true };
 };
 
+const completeRideWithOtp = async (rideId: string, enteredOtp: number) => {
+  const ride = await Ride.findById(rideId);
+
+  if (!ride || ride.rideStatus !== 'continue') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Ride not available or not in progress'
+    );
+  }
+
+  if (ride.otp !== enteredOtp) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
+  }
+
+  ride.rideStatus = 'completed';
+  ride.otp = undefined;
+  await ride.save();
+
+  return ride;
+};
+
 export const RideService = {
   findNearestOnlineRiders,
   createRideToDB,
@@ -289,4 +310,5 @@ export const RideService = {
   cancelRide,
   continueRide,
   requestCloseRide,
+  completeRideWithOtp,
 };

@@ -139,6 +139,23 @@ const requestCloseRide = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
+  const { rideId, otp } = req.body;
+
+  if (!rideId || !otp) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID and OTP are required');
+  }
+
+  const ride = await RideService.completeRideWithOtp(rideId, Number(otp));
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Ride completed successfully',
+    data: ride,
+  });
+});
+
 export const RideController = {
   findNearestOnlineRiders,
   createRide,
@@ -146,4 +163,5 @@ export const RideController = {
   cancelRide,
   continueRide,
   requestCloseRide,
+  completeRideWithOtp,
 };

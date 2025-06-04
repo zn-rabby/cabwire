@@ -5,7 +5,8 @@ export type RideStatus =
   | 'accepted'
   | 'continue'
   | 'clouse'
-  | 'cancelled';
+  | 'cancelled'
+  | 'completed';
 
 export type PaymentMethod = 'stripe' | 'offline';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';

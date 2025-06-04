@@ -38,8 +38,19 @@ router.patch(
 
 router.patch(
   '/request-close-ride/:id',
-  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
+  auth(
+    USER_ROLES.ADMIN,
+    USER_ROLES.DRIVER,
+    USER_ROLES.USER,
+    USER_ROLES.SUPER_ADMIN
+  ),
   RideController.requestCloseRide
+);
+
+router.post(
+  '/verify-ride-otp',
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
+  RideController.completeRideWithOtp
 );
 
 export const RideRoutes = router;
