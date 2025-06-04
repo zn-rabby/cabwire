@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { PaymentService } from './payment.service';
+import catchAsync from '../../../shared/catchAsync';
 
-export const createPayment = async (
+const createPayment = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -18,4 +19,14 @@ export const createPayment = async (
   }
 };
 
-export const PaymentController = { createPayment };
+const getAllPayments = catchAsync(async (req: Request, res: Response) => {
+  const payments = await PaymentService.getAllPayments();
+  res.status(200).json({
+    statusCode: 200,
+    success: true,
+    message: 'All payments retrieved successfully',
+    data: payments,
+  });
+});
+
+export const PaymentController = { createPayment, getAllPayments };

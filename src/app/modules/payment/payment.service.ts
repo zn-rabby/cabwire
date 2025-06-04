@@ -102,7 +102,16 @@ const createPayment = async (payload: Partial<IPayment>) => {
     redirectUrl: stripeSessionUrl,
   };
 };
+// const getAllPayments = async () => {
+//   const payments = await Payment.find().sort({ createdAt: -1 }); // optional: latest first
+//   return payments;
+// };
+const getAllPayments = async () => {
+  const payments = await stripe.balanceTransactions.list(); // optional: latest first
+  return payments;
+};
 
 export const PaymentService = {
   createPayment,
+  getAllPayments,
 };
