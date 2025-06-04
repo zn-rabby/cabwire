@@ -3,8 +3,8 @@ import { Document, Types } from 'mongoose';
 export type RideStatus =
   | 'requested'
   | 'accepted'
-  | 'ongoing'
-  | 'completed'
+  | 'continue'
+  | 'clouse'
   | 'cancelled';
 
 export type PaymentMethod = 'stripe' | 'offline';

@@ -19,9 +19,15 @@ router
 
 router.post('/nearest-driver', RideController.findNearestOnlineRiders);
 router.patch(
-  '/accept-ride-driver/:id',    // param name "id" matches controller
+  '/accept-ride-driver/:id', // param name "id" matches controller
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER),
   RideController.acceptRide
+);
+
+router.patch(
+  '/cancel-ride-driver/:id', // param name "id" must match controller
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER,USER_ROLES.USER),
+  RideController.cancelRide
 );
 
 export const RideRoutes = router;

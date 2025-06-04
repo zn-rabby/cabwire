@@ -25,7 +25,7 @@ const rideSchema = new Schema<IRide>(
 
     rideStatus: {
       type: String,
-      enum: ['requested', 'accepted', 'ongoing', 'completed', 'cancelled'],
+      enum: ['requested', 'accepted', 'continue', 'clouse', 'cancelled'],
       default: 'requested',
     },
 

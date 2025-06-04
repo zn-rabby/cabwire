@@ -71,8 +71,35 @@ const acceptRide = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const cancelRide = catchAsync(async (req: Request, res: Response) => {
+  const driverId = req.user?.id;
+  const rideId = req.params.id;
+
+  if (!driverId) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      success: false,
+      message: 'Unauthorized. Please log in.',
+    });
+  }
+
+  if (!rideId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID is required');
+  }
+
+  const ride = await RideService.cancelRide(rideId, driverId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Ride cancelled successfully',
+    data: ride,
+  });
+});
+cancelRide;
+
 export const RideController = {
   findNearestOnlineRiders,
   createRide,
   acceptRide,
+  cancelRide,
 };

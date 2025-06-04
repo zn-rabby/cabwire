@@ -181,14 +181,44 @@ const acceptRide = async (rideId: string, driverId: string) => {
     );
   }
 
-  // Assign driver (convert driverId string to ObjectId here)
   ride.driverId = new Types.ObjectId(driverId);
   ride.rideStatus = 'accepted';
   await ride.save();
 
-  // Notify user via socket if exists
   if (global.io && ride?._id) {
     global.io.emit('ride-accepted::', {
+      rideId: ride._id,
+      driverId,
+    });
+  }
+  return ride;
+};
+
+const cancelRide = async (rideId: string, driverId: string) => {
+  const ride = await Ride.findById(rideId);
+
+  if (!ride || ride.rideStatus !== 'requested') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid ride or already cancelled'
+    );
+  }
+
+  // Only assigned driver can cancel
+  // if (ride.driverId?.toString() !== driverId.toString()) {
+  //   throw new ApiError(
+  //     StatusCodes.FORBIDDEN,
+  //     'You are not authorized to cancel this ride'
+  //   );
+  // }
+
+  // Update status
+  ride.rideStatus = 'cancelled';
+  await ride.save();
+
+  // Emit ride-cancelled event
+  if (global.io && ride._id) {
+    global.io.emit('ride-cancelled::', {
       rideId: ride._id,
       driverId,
     });
@@ -201,4 +231,5 @@ export const RideService = {
   findNearestOnlineRiders,
   createRideToDB,
   acceptRide,
+  cancelRide,
 };
