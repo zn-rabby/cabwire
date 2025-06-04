@@ -69,6 +69,7 @@ const createRideToDB = async (
   const pickup = payload.pickupLocation;
   const dropoff = payload.dropoffLocation;
 
+  // ✅ Validate pickup & dropoff coordinates
   if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -76,22 +77,27 @@ const createRideToDB = async (
     );
   }
 
+  // ✅ Validate duration
   if (typeof payload.duration !== 'number' || payload.duration <= 0) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Duration is required and must be a positive number.'
+      'Duration must be a positive number.'
     );
   }
 
+  // ✅ Validate service & category
   if (!payload.service || !payload.category) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Service and category IDs are required.'
+      'Service and category are required.'
     );
   }
 
-  const service = await Service.findById(payload.service);
-  const category = await Category.findById(payload.category);
+  // ✅ Fetch service & category data
+  const [service, category] = await Promise.all([
+    Service.findById(payload.service),
+    Category.findById(payload.category),
+  ]);
 
   if (!service || !category) {
     throw new ApiError(
@@ -102,9 +108,6 @@ const createRideToDB = async (
 
   // ✅ Calculate distance
   const distance = getDistanceFromLatLonInKm(pickup, dropoff);
-
-  // TODO:
-  console.log('distance', distance);
 
   // ✅ Calculate fare
   let fare: number;
@@ -123,6 +126,7 @@ const createRideToDB = async (
     );
   }
 
+  // ✅ Prepare ride data
   const rideData: Partial<IRide> = {
     ...payload,
     distance,
@@ -132,17 +136,22 @@ const createRideToDB = async (
     paymentStatus: 'pending',
   };
 
+  // ✅ Create ride
   const ride = await Ride.create(rideData);
-  console.log(ride);
 
-  if (!ride) {
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Failed to create ride.'
-    );
+  // ✅ Access global io
+  const io = global.io;
+
+  if (io && ride.pickupLocation) {
+    io.emit('ride-requested', {
+      rideId: ride._id,
+      userId: ride.userId,
+      coordinates: ride.pickupLocation,
+      status: ride.rideStatus,
+    });
   }
-  // return ride;
-  console.log('ride', ride);
+
+  return ride;
 };
 
 export const RideService = {
