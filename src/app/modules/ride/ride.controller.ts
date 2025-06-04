@@ -4,6 +4,7 @@ import sendResponse from '../../../shared/sendResponse';
 import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
 import { RideService } from './ride.service';
+import ApiError from '../../../errors/ApiError';
 
 // find nearest driver location
 const findNearestOnlineRiders = catchAsync(async (req, res) => {
@@ -44,7 +45,34 @@ const createRide = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const acceptRide = catchAsync(async (req: Request, res: Response) => {
+  const driverId = req.user?.id;
+  const rideId = req.params.id; // note param name: "id"
+
+  if (!driverId) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      success: false,
+      message: 'Unauthorized. Please log in.',
+    });
+  }
+
+  if (!rideId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID is required');
+  }
+
+  // Pass rideId and driverId as strings to service
+  const ride = await RideService.acceptRide(rideId, driverId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Ride accepted successfully',
+    data: ride,
+  });
+});
+
 export const RideController = {
   findNearestOnlineRiders,
   createRide,
+  acceptRide,
 };

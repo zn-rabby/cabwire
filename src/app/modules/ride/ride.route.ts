@@ -18,5 +18,10 @@ router
   );
 
 router.post('/nearest-driver', RideController.findNearestOnlineRiders);
+router.patch(
+  '/accept-ride-driver/:id',    // param name "id" matches controller
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER),
+  RideController.acceptRide
+);
 
 export const RideRoutes = router;

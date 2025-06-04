@@ -148,13 +148,14 @@ const createRideToDB = async (
       'No available drivers near your pickup location.'
     );
   }
+  console.log('dd', nearestDrivers);
 
-  // Send ride request to nearby drivers via socket
+  // @ts-ignore
   const io = global.io;
 
-  if (io && ride._id) {
+  if (io && ride?._id) {
     nearestDrivers.forEach(driver => {
-      io.to(driver._id.toString()).emit('ride-requested', {
+      io.emit('ride-requested::', {
         rideId: ride._id,
         userId: ride.userId,
         pickupLocation: ride.pickupLocation,
@@ -180,14 +181,14 @@ const acceptRide = async (rideId: string, driverId: string) => {
     );
   }
 
-  // Assign driver
+  // Assign driver (convert driverId string to ObjectId here)
   ride.driverId = new Types.ObjectId(driverId);
   ride.rideStatus = 'accepted';
   await ride.save();
 
-  // Optionally notify the user
-  if (global.io) {
-    global.io.to(ride.userId.toString()).emit('ride-accepted', {
+  // Notify user via socket if exists
+  if (global.io && ride?._id) {
+    global.io.emit('ride-accepted::', {
       rideId: ride._id,
       driverId,
     });
