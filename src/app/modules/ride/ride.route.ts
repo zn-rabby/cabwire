@@ -26,8 +26,13 @@ router.patch(
 
 router.patch(
   '/cancel-ride-driver/:id', // param name "id" must match controller
-  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER,USER_ROLES.USER),
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
   RideController.cancelRide
+);
+router.patch(
+  '/continue-ride-driver/:id', // param name "id" must match controller
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
+  RideController.continueRide
 );
 
 export const RideRoutes = router;
