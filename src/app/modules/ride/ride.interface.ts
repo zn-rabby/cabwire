@@ -35,7 +35,7 @@ export interface IRide extends Document {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
 
-  otp?: string;
+  otp?: Number;
   paymentID?: string;
   orderId?: string;
   signature?: string;

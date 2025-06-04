@@ -41,7 +41,7 @@ const rideSchema = new Schema<IRide>(
       default: 'pending',
     },
 
-    otp: { type: String, select: false },
+    otp: { type: Number, select: false },
     paymentID: String,
     orderId: String,
     signature: String,

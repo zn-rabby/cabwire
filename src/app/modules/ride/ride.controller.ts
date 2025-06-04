@@ -121,10 +121,29 @@ const continueRide = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const requestCloseRide = catchAsync(async (req: Request, res: Response) => {
+  const driverId = req.user?.id;
+  const rideId = req.params.id;
+
+  if (!driverId) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+
+  const data = await RideService.requestCloseRide(rideId, driverId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'OTP generated and sent to user',
+    data,
+  });
+});
+
 export const RideController = {
   findNearestOnlineRiders,
   createRide,
   acceptRide,
   cancelRide,
   continueRide,
+  requestCloseRide,
 };

@@ -7,6 +7,7 @@ import { Category } from '../category/category.model';
 import { Service } from '../service/service.model';
 import { calculateFare } from './ride.utils';
 import { User } from '../user/user.model';
+import generateOTP from '../../../util/generateOTP';
 
 // find nearest riders
 const findNearestOnlineRiders = async (location: {
@@ -256,6 +257,30 @@ const continueRide = async (rideId: string, driverId: string) => {
 
   return ride;
 };
+const requestCloseRide = async (rideId: string, driverId: string) => {
+  const ride = await Ride.findById(rideId);
+
+  if (!ride || ride.rideStatus !== 'continue') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid ride or ride not in progress'
+    );
+  }
+
+  const otp = generateOTP();
+  ride.otp = otp; // save OTP to DB
+  await ride.save();
+
+  // Emit OTP to user via socket
+  if (global.io && ride.userId) {
+    global.io.to(ride.userId.toString()).emit('ride-otp-generated', {
+      rideId: ride._id,
+      otp,
+    });
+  }
+
+  return { rideId: ride._id, otpSent: true };
+};
 
 export const RideService = {
   findNearestOnlineRiders,
@@ -263,4 +288,5 @@ export const RideService = {
   acceptRide,
   cancelRide,
   continueRide,
+  requestCloseRide,
 };
