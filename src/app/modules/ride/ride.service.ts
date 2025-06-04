@@ -153,7 +153,7 @@ const createRideToDB = async (
   const io = global.io;
 
   if (io && ride._id) {
-    nearestDrivers.forEach((driver) => {
+    nearestDrivers.forEach(driver => {
       io.to(driver._id.toString()).emit('ride-requested', {
         rideId: ride._id,
         userId: ride.userId,
@@ -170,8 +170,34 @@ const createRideToDB = async (
   return ride;
 };
 
+const acceptRide = async (rideId: string, driverId: string) => {
+  const ride = await Ride.findById(rideId);
+
+  if (!ride || ride.rideStatus !== 'requested') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid ride or already accepted'
+    );
+  }
+
+  // Assign driver
+  ride.driverId = new Types.ObjectId(driverId);
+  ride.rideStatus = 'accepted';
+  await ride.save();
+
+  // Optionally notify the user
+  if (global.io) {
+    global.io.to(ride.userId.toString()).emit('ride-accepted', {
+      rideId: ride._id,
+      driverId,
+    });
+  }
+
+  return ride;
+};
 
 export const RideService = {
   findNearestOnlineRiders,
   createRideToDB,
+  acceptRide,
 };
