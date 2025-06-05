@@ -62,8 +62,37 @@ const cancelRide = async (rideId: string, driverId: string) => {
   return ride;
 };
 
+const continueRide = async (rideId: string, driverId: string) => {
+  const ride = await CabwireModel.findById(rideId);
+
+  if (!ride || ride.rideStatus !== 'requested') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid ride or already continue'
+    );
+  }
+  // Only assigned driver can cancel
+  // if (ride.driverId?.toString() !== driverId.toString()) {
+  //   throw new ApiError(
+  //     StatusCodes.FORBIDDEN,
+  //     'You are not authorized to cancel this ride'
+  //   );
+  // } 
+  ride.rideStatus = 'continue';
+  await ride.save();
+ 
+  if (global.io && ride._id) {
+    global.io.emit('ride-continue::', {
+      rideId: ride._id,
+      driverId,
+    });
+  } 
+  return ride;
+};
+
 export const CabwireService = {
   createRideByDriver,
   bookRideByUser,
   cancelRide,
+  continueRide,
 };

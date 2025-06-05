@@ -27,9 +27,14 @@ router.patch(
   CabwireController.bookRide
 );
 router.patch(
-  '/cancel-cabwire/:id', // param name "id" must match controller
+  '/cancel-cabwire/:id',
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
   CabwireController.cancelRide
 );
 
+router.patch(
+  '/continue-cabwire/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
+  CabwireController.continueRide
+);
 export const CabwireRoutes = router;
