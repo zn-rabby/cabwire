@@ -268,40 +268,78 @@ const requestCloseRide = async (rideId: string, driverId: string) => {
   }
 
   const otp = generateOTP();
-  ride.otp = otp;
+  // Explicitly convert OTP to number before saving
+  ride.otp = Number(otp);
   await ride.save();
 
-  // Return OTP in response only (no socket/email)
   return {
     rideId: ride._id,
-    otp, // include OTP here
+    otp: Number(otp), // ensure number type in response
   };
 };
-
 const completeRideWithOtp = async (rideId: string, enteredOtp: number) => {
-  const ride = await Ride.findById(rideId);
-  console.log('ride:', ride);
+  console.log('Verifying OTP for ride:', rideId, 'with OTP:', enteredOtp);
 
-  if (!ride || ride.rideStatus !== 'continue') {
+  // First find the ride without any session
+  const ride = await Ride.findById(rideId);
+
+  if (!ride) {
+    console.log('Ride not found with ID:', rideId);
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not found');
+  }
+
+  console.log('Found ride:', {
+    id: ride._id,
+    status: ride.rideStatus,
+    storedOtp: ride.otp,
+    typeOfStoredOtp: typeof ride.otp,
+    enteredOtp,
+    typeOfEnteredOtp: typeof enteredOtp,
+  });
+
+  if (ride.rideStatus !== 'continue') {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not in progress');
+  }
+
+  if (!ride.otp) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Ride not available or not in progress'
+      'No OTP generated for this ride'
     );
   }
 
-  // OTP stored as number or string? Convert both to number for safe comparison
-  const storedOtp = Number(ride.otp);
-  if (storedOtp !== enteredOtp) {
+  // Compare OTPs after ensuring same type
+  if (Number(ride.otp) !== Number(enteredOtp)) {
+    console.log('OTP mismatch:', {
+      stored: ride.otp,
+      entered: enteredOtp,
+    });
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
   }
 
-  ride.rideStatus = 'completed';
-  ride.otp = undefined; // Clear OTP after successful verification
-  await ride.save();
+  // Use findOneAndUpdate for atomic update
+  const updatedRide = await Ride.findOneAndUpdate(
+    {
+      _id: rideId,
+      otp: ride.otp, // Ensure OTP hasn't changed
+      rideStatus: 'continue', // Ensure status hasn't changed
+    },
+    {
+      $set: { rideStatus: 'completed' },
+      $unset: { otp: 1 },
+    },
+    { new: true } // Return the updated document
+  );
 
-  return ride;
+  if (!updatedRide) {
+    throw new ApiError(
+      StatusCodes.CONFLICT,
+      'Ride state changed during verification'
+    );
+  }
+
+  return updatedRide;
 };
-
 export const RideService = {
   findNearestOnlineRiders,
   createRideToDB,
