@@ -1,6 +1,8 @@
 import { CabwireModel } from './cabwire.model';
 import { ICabwire } from './cabwire.interface';
 import { Types } from 'mongoose';
+import { StatusCodes } from 'http-status-codes';
+import ApiError from '../../../errors/ApiError';
 
 const createRideByDriver = async (payload: ICabwire): Promise<ICabwire> => {
   const ride = await CabwireModel.create(payload);
@@ -27,7 +29,41 @@ const bookRideByUser = async (
   return ride;
 };
 
+const cancelRide = async (rideId: string, driverId: string) => {
+  const ride = await CabwireModel.findById(rideId);
+
+  if (!ride || ride.rideStatus !== 'requested') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid ride or already cancelled'
+    );
+  }
+
+  // Only assigned driver can cancel
+  // if (ride.driverId?.toString() !== driverId.toString()) {
+  //   throw new ApiError(
+  //     StatusCodes.FORBIDDEN,
+  //     'You are not authorized to cancel this ride'
+  //   );
+  // }
+
+  // Update status
+  ride.rideStatus = 'cancelled';
+  await ride.save();
+
+  // Emit ride-cancelled event
+  if (global.io && ride._id) {
+    global.io.emit('ride-cancelled::', {
+      rideId: ride._id,
+      driverId,
+    });
+  }
+
+  return ride;
+};
+
 export const CabwireService = {
   createRideByDriver,
   bookRideByUser,
+  cancelRide,
 };

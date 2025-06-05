@@ -1,6 +1,12 @@
 import { Document, Types } from 'mongoose';
 
-export type RideStatus = 'requested' | 'accepted' | 'ongoing' | 'completed' | 'cancelled';
+export type RideStatus =
+  | 'requested'
+  | 'accepted'
+  | 'continue'
+  | 'clouse'
+  | 'cancelled'
+  | 'completed';
 export type PaymentMethod = 'stripe' | 'offline';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
 

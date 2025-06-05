@@ -6,7 +6,7 @@ import { CabwireController } from './cabwire.controller';
 const router = express.Router();
 
 router.post(
-  '/create',
+  '/create-cabwire',
   auth(
     USER_ROLES.USER,
     USER_ROLES.DRIVER,
@@ -17,7 +17,7 @@ router.post(
 );
 
 router.patch(
-  '/book/:rideId',
+  '/accept-cabwire/:rideId',
   auth(
     USER_ROLES.USER,
     USER_ROLES.DRIVER,
@@ -25,6 +25,11 @@ router.patch(
     USER_ROLES.SUPER_ADMIN
   ),
   CabwireController.bookRide
+);
+router.patch(
+  '/cancel-cabwire/:id', // param name "id" must match controller
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
+  CabwireController.cancelRide
 );
 
 export const CabwireRoutes = router;

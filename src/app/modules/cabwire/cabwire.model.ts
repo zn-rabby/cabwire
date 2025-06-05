@@ -23,7 +23,14 @@ const CabwireSchema = new Schema<ICabwire>(
     fare: { type: Number },
     rideStatus: {
       type: String,
-      enum: ['requested', 'accepted', 'ongoing', 'completed', 'cancelled'],
+      enum: [
+        'requested',
+        'accepted',
+        'continue',
+        'clouse',
+        'cancelled',
+        'completed',
+      ],
       default: 'requested',
     },
     setAvailable: { type: Number, required: true },
