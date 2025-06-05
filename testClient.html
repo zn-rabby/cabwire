@@ -40,6 +40,13 @@
         console.log('Accepted By Driver ID:', data.driverId);
       });
 
+      // Listen for ride cancellation
+      socket.on('ride-cancelled::', data => {
+        console.log('❌ Ride Cancelled!');
+        console.log('Ride ID:', data.rideId);
+        console.log('Cancelled By Driver ID:', data.driverId);
+      });
+
       // Optional: other existing listeners
       socket.on('delivery-updated', data => {
         console.log('📦 Delivery update:', data);
