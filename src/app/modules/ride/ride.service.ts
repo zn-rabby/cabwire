@@ -205,14 +205,6 @@ const cancelRide = async (rideId: string, driverId: string) => {
     );
   }
 
-  // Only assigned driver can cancel
-  // if (ride.driverId?.toString() !== driverId.toString()) {
-  //   throw new ApiError(
-  //     StatusCodes.FORBIDDEN,
-  //     'You are not authorized to cancel this ride'
-  //   );
-  // }
-
   // Update status
   ride.rideStatus = 'cancelled';
   await ride.save();
@@ -236,13 +228,7 @@ const continueRide = async (rideId: string, driverId: string) => {
       'Invalid ride or already continue'
     );
   }
-  // Only assigned driver can cancel
-  // if (ride.driverId?.toString() !== driverId.toString()) {
-  //   throw new ApiError(
-  //     StatusCodes.FORBIDDEN,
-  //     'You are not authorized to cancel this ride'
-  //   );
-  // }
+  
   // Update status
   ride.rideStatus = 'continue';
   await ride.save();

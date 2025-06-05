@@ -47,6 +47,13 @@
         console.log('Cancelled By Driver ID:', data.driverId);
       });
 
+      // Listen for ride continuation
+      socket.on('ride-continue::', data => {
+        console.log('▶️ Ride Continued!');
+        console.log('Ride ID:', data.rideId);
+        console.log('Continued By Driver ID:', data.driverId);
+      });
+
       // Optional: other existing listeners
       socket.on('delivery-updated', data => {
         console.log('📦 Delivery update:', data);
