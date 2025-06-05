@@ -2,29 +2,44 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Socket Test</title>
+    <title>Ride Request Test</title>
   </head>
   <body>
-    <h1>Socket.IO Test</h1>
-    <p>Open browser console to see logs.</p>
+    <h1>🚗 Ride Request Test</h1>
+    <p>Open browser console to see ride request logs.</p>
 
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
+      // Update this to match your backend server's IP and port
       const socket = io('http://10.0.60.114:5005');
 
       socket.on('connect', () => {
-        console.log('✅ Connected');
+        console.log('✅ Connected to socket server');
 
-        // Join rider room
+        // Join as a driver (example: use actual driver ID in real app)
         socket.emit('join', 'rider::683d7fb164a3fb85635596e2');
       });
 
+      // Listen for ride requests
+      socket.on('ride-requested::', data => {
+        console.log('🚖 New Ride Request Received:');
+        console.log('Ride ID:', data.rideId);
+        console.log('User ID:', data.userId);
+        console.log('Pickup Location:', data.pickupLocation);
+        console.log('Dropoff Location:', data.dropoffLocation);
+        console.log('Status:', data.status);
+        console.log('Fare:', data.fare);
+        console.log('Distance (km):', data.distance);
+        console.log('Duration (mins):', data.duration);
+      });
+
+      // Optional: other existing listeners
       socket.on('delivery-updated', data => {
-        console.log('📦 Received delivery update:', data);
+        console.log('📦 Delivery update:', data);
       });
 
       socket.on('rider-location-updated', data => {
-        console.log('📍 Rider location updated:', data);
+        console.log('📍 Rider location update:', data);
       });
 
       socket.on('disconnect', () => {
