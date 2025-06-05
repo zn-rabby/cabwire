@@ -205,6 +205,14 @@ const cancelRide = async (rideId: string, driverId: string) => {
     );
   }
 
+  // Only assigned driver can cancel
+  // if (ride.driverId?.toString() !== driverId.toString()) {
+  //   throw new ApiError(
+  //     StatusCodes.FORBIDDEN,
+  //     'You are not authorized to cancel this ride'
+  //   );
+  // }
+
   // Update status
   ride.rideStatus = 'cancelled';
   await ride.save();
@@ -228,7 +236,13 @@ const continueRide = async (rideId: string, driverId: string) => {
       'Invalid ride or already continue'
     );
   }
-  
+  // Only assigned driver can cancel
+  // if (ride.driverId?.toString() !== driverId.toString()) {
+  //   throw new ApiError(
+  //     StatusCodes.FORBIDDEN,
+  //     'You are not authorized to cancel this ride'
+  //   );
+  // }
   // Update status
   ride.rideStatus = 'continue';
   await ride.save();
@@ -254,22 +268,19 @@ const requestCloseRide = async (rideId: string, driverId: string) => {
   }
 
   const otp = generateOTP();
-  ride.otp = otp; // save OTP to DB
+  ride.otp = otp;
   await ride.save();
 
-  // Emit OTP to user via socket
-  if (global.io && ride.userId) {
-    global.io.to(ride.userId.toString()).emit('ride-otp-generated', {
-      rideId: ride._id,
-      otp,
-    });
-  }
-
-  return { rideId: ride._id, otpSent: true };
+  // Return OTP in response only (no socket/email)
+  return {
+    rideId: ride._id,
+    otp, // include OTP here
+  };
 };
 
 const completeRideWithOtp = async (rideId: string, enteredOtp: number) => {
   const ride = await Ride.findById(rideId);
+  console.log('ride:', ride);
 
   if (!ride || ride.rideStatus !== 'continue') {
     throw new ApiError(
@@ -278,12 +289,14 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: number) => {
     );
   }
 
-  if (ride.otp !== enteredOtp) {
+  // OTP stored as number or string? Convert both to number for safe comparison
+  const storedOtp = Number(ride.otp);
+  if (storedOtp !== enteredOtp) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
   }
 
   ride.rideStatus = 'completed';
-  ride.otp = undefined;
+  ride.otp = undefined; // Clear OTP after successful verification
   await ride.save();
 
   return ride;

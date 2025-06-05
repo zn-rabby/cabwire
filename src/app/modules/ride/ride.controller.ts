@@ -134,7 +134,7 @@ const requestCloseRide = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: 'OTP generated and sent to user',
+    message: 'OTP generated successfully',
     data,
   });
 });
@@ -142,11 +142,18 @@ const requestCloseRide = catchAsync(async (req: Request, res: Response) => {
 const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
   const { rideId, otp } = req.body;
 
-  if (!rideId || !otp) {
+  // Validate input
+  if (!rideId || otp === undefined) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID and OTP are required');
   }
 
-  const ride = await RideService.completeRideWithOtp(rideId, Number(otp));
+  // Convert otp to number safely
+  const enteredOtp = Number(otp);
+  if (isNaN(enteredOtp)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'OTP must be a number');
+  }
+
+  const ride = await RideService.completeRideWithOtp(rideId, enteredOtp);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
