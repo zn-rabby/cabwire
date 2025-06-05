@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Socket Test</title>
+  </head>
+  <body>
+    <h1>Socket.IO Test</h1>
+    <p>Open browser console to see logs.</p>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+      const socket = io('http://10.0.60.114:5005');
+
+      socket.on('connect', () => {
+        console.log('✅ Connected');
+
+        // Join rider room
+        socket.emit('join', 'rider::683d7fb164a3fb85635596e2');
+      });
+
+      socket.on('delivery-updated', data => {
+        console.log('📦 Received delivery update:', data);
+      });
+
+      socket.on('rider-location-updated', data => {
+        console.log('📍 Rider location updated:', data);
+      });
+
+      socket.on('disconnect', () => {
+        console.log('❌ Disconnected from server');
+      });
+    </script>
+  </body>
+</html>
