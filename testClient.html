@@ -17,7 +17,7 @@
         console.log('✅ Connected to socket server');
 
         // Join as a driver (example: use actual driver ID in real app)
-        socket.emit('join', 'rider::683d7fb164a3fb85635596e2');
+        socket.emit('join', 'rider::68404642c059928b97088a3b');
       });
 
       // Listen for ride requests
@@ -31,6 +31,13 @@
         console.log('Fare:', data.fare);
         console.log('Distance (km):', data.distance);
         console.log('Duration (mins):', data.duration);
+      });
+
+      // Listen for ride acceptance events
+      socket.on('ride-accepted::', data => {
+        console.log('✅ Ride Accepted!');
+        console.log('Ride ID:', data.rideId);
+        console.log('Accepted By Driver ID:', data.driverId);
       });
 
       // Optional: other existing listeners
