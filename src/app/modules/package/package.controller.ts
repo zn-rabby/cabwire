@@ -52,7 +52,32 @@ const acceptPackage = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const markAsDelivered = catchAsync(async (req: Request, res: Response) => {
+  const driverId = req.user?.id;
+  const packageId = req.params.packageId;
+
+  if (!driverId) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      success: false,
+      message: 'Unauthorized',
+    });
+  }
+
+  const updated = await PackageService.markPackageAsDelivered(
+    packageId,
+    new mongoose.Types.ObjectId(driverId)
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Package marked as delivered',
+    data: updated,
+  });
+});
+
 export const PackageController = {
   createPackage,
   acceptPackage,
+  markAsDelivered,
 };

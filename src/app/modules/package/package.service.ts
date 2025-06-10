@@ -126,7 +126,39 @@ const acceptPackageByDriver = async (
   return existing;
 };
 
+const markPackageAsDelivered = async (
+  packageId: string,
+  driverId: Types.ObjectId
+) => {
+  const pkg = await PackageModel.findOne({ _id: packageId });
+
+  if (!pkg) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Package not found');
+  }
+
+  if (!pkg.driverId || pkg.driverId.toString() !== driverId.toString()) {
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      'You are not assigned to this package'
+    );
+  }
+
+  if (pkg.packageStatus !== 'accepted') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Package is not in accepted state'
+    );
+  }
+
+  pkg.packageStatus = 'delivered';
+  pkg.deliveredAt = new Date();
+
+  await pkg.save();
+  return pkg;
+};
+
 export const PackageService = {
   createPackageToDB,
   acceptPackageByDriver,
+  markPackageAsDelivered,
 };

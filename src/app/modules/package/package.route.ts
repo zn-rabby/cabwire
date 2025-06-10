@@ -21,5 +21,10 @@ router.patch(
   auth(USER_ROLES.DRIVER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   PackageController.acceptPackage
 );
+router.patch(
+  '/deliver-package/:packageId',
+  auth(USER_ROLES.DRIVER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  PackageController.markAsDelivered
+);
 
 export const PackageRoutes = router;
