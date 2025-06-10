@@ -11,7 +11,7 @@ import generateOTP from '../../../util/generateOTP';
 import { calculateDistance } from '../../../util/calculateDistance';
 
 // find nearest riders
-const findNearestOnlineRiders = async (location: {
+export const findNearestOnlineRiders = async (location: {
   lat?: number;
   lng?: number;
 }) => {

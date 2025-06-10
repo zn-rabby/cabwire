@@ -2,7 +2,8 @@ import { PackageModel } from './package.model';
 import { IPackage } from './package.interface';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
-import { Types } from 'mongoose'; 
+import { Types } from 'mongoose';
+import { findNearestOnlineRiders } from '../ride/ride.service';
 
 // Distance formula
 const getDistanceFromLatLonInKm = (
@@ -50,10 +51,10 @@ const createPackageToDB = async (
     );
   }
 
-  // ✅ Calculate distance
+  // Calculate distance
   const distance = getDistanceFromLatLonInKm(pickupLocation, dropoffLocation);
 
-  // ✅ Calculate fare based on distance
+  // Calculate fare using your fare function
   const fare = calculateDistanceBasedFare(distance);
 
   const packageData: Partial<IPackage> = {
@@ -72,6 +73,29 @@ const createPackageToDB = async (
       StatusCodes.INTERNAL_SERVER_ERROR,
       'Failed to create package request.'
     );
+  }
+
+  // Find nearest drivers within 5 km of pickup location
+  const nearestDrivers = await findNearestOnlineRiders({
+    lat: pickupLocation.lat,
+    lng: pickupLocation.lng,
+  });
+
+  // Get socket.io
+  const io = global.io;
+
+  if (io && createdPackage?._id) {
+    nearestDrivers.forEach(driver => {
+      io.emit('package-requested::', {
+        packageId: createdPackage._id,
+        userId: createdPackage.userId,
+        pickupLocation: createdPackage.pickupLocation,
+        dropoffLocation: createdPackage.dropoffLocation,
+        status: createdPackage.packageStatus,
+        fare: createdPackage.fare,
+        distance: createdPackage.distance,
+      });
+    });
   }
 
   return createdPackage;

@@ -1,7 +1,5 @@
-import { Document, Types } from 'mongoose';
-
-export type packageStatus = 'requested' | 'accepted' | 'delivered';
-
+import { Document, Types } from 'mongoose'; 
+export type packageStatus = 'requested' | 'accepted' | 'delivered'; 
 export type PaymentMethod = 'stripe' | 'offline';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
 
@@ -9,8 +7,7 @@ export interface ILocation {
   lat: number;
   lng: number;
   address?: string;
-}
-
+} 
 export interface IPackage extends Document {
   userId: Types.ObjectId;
   driverId?: Types.ObjectId;
