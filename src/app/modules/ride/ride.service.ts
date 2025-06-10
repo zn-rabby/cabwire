@@ -8,6 +8,7 @@ import { Service } from '../service/service.model';
 import { calculateFare } from './ride.utils';
 import { User } from '../user/user.model';
 import generateOTP from '../../../util/generateOTP';
+import { calculateDistance } from '../../../util/calculateDistance';
 
 // find nearest riders
 const findNearestOnlineRiders = async (location: {
@@ -40,27 +41,6 @@ const findNearestOnlineRiders = async (location: {
   });
 
   return result;
-};
-
-// ✅ Helper to calculate distance using lat/lng
-const getDistanceFromLatLonInKm = (
-  pickup: { lat: number; lng: number },
-  dropoff: { lat: number; lng: number }
-): number => {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-
-  const R = 6371; // Earth radius in km
-  const dLat = toRad(dropoff.lat - pickup.lat);
-  const dLon = toRad(dropoff.lng - pickup.lng);
-
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(pickup.lat)) *
-      Math.cos(toRad(dropoff.lat)) *
-      Math.sin(dLon / 2) ** 2;
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
 };
 
 const createRideToDB = async (
@@ -108,7 +88,7 @@ const createRideToDB = async (
   }
 
   // Calculate distance
-  const distance = getDistanceFromLatLonInKm(pickup, dropoff);
+  const distance = calculateDistance(pickup, dropoff);
 
   // Calculate fare
   let fare: number;
