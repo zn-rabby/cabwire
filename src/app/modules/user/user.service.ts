@@ -74,6 +74,36 @@ const updateProfileToDB = async (
 
   return updateDoc;
 };
+
+const updateProfileByEmailToDB = async (
+  payload: Partial<IUser> & { email: string }
+): Promise<Partial<IUser | null>> => {
+  const { email, image, ...rest } = payload;
+
+  const isExistUser = await User.findOne({ email });
+  if (!isExistUser) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "User with this email doesn't exist!"
+    );
+  }
+
+  if (image && isExistUser.image) {
+    unlinkFile(isExistUser.image);
+  }
+
+  const updatedDoc = await User.findOneAndUpdate(
+    { email },
+    {
+      ...rest,
+      ...(image && { image }),
+    },
+    { new: true }
+  );
+
+  return updatedDoc;
+};
+
 const verifyUserPassword = async (userId: string, password: string) => {
   const user = await User.findById(userId).select('+password');
   if (!user) {
@@ -265,6 +295,7 @@ export const UserService = {
   createUserToDB,
   getUserProfileFromDB,
   updateProfileToDB,
+  updateProfileByEmailToDB,
   deleteUser,
   verifyUserPassword,
 

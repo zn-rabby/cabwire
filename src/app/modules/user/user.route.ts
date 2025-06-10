@@ -37,6 +37,19 @@ router
     }
   );
 
+router.patch(
+  '/update-profile-by-email/:email',
+  fileUploadHandler(),
+  (req: Request, res: Response, next: NextFunction) => {
+    if (req.body.data) {
+      req.body = UserValidation.updateUserZodSchema.parse(
+        JSON.parse(req.body.data)
+      );
+    }
+    return UserController.updateProfileByEmail(req, res, next);
+  }
+);
+
 router.delete(
   '/delete-my-account',
   auth(

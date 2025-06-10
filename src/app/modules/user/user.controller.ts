@@ -52,6 +52,28 @@ const updateProfile = catchAsync(
   }
 );
 
+const updateProfileByEmail = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const email = req.params.email;
+    let image = getSingleFilePath(req.files, 'image');
+
+    const data = {
+      email, // ✅ path theke ashche
+      image,
+      ...req.body,
+    };
+
+    const result = await UserService.updateProfileByEmailToDB(data);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: 'User profile updated successfully by email',
+      data: result,
+    });
+  }
+);
+
 //delete profile
 const deleteProfile = catchAsync(async (req, res) => {
   const { id }: any = req.user;
@@ -209,6 +231,7 @@ export const UserController = {
   createUser,
   getUserProfile,
   updateProfile,
+  updateProfileByEmail,
   deleteProfile,
   // user
   getTotalUserCount,
