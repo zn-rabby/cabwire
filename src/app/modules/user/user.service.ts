@@ -126,6 +126,28 @@ const updateStripeAccountIdByEmail = async (
   return updatedDoc;
 };
 
+const updateUserOnlineStatusByEmail = async (
+  email: string,
+  isOnline: boolean
+): Promise<Partial<IUser | null>> => {
+  const isExistUser = await User.findOne({ email });
+
+  if (!isExistUser) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "User with this email doesn't exist!"
+    );
+  }
+
+  const updatedDoc = await User.findOneAndUpdate(
+    { email },
+    { isOnline },
+    { new: true }
+  );
+
+  return updatedDoc;
+};
+
 const verifyUserPassword = async (userId: string, password: string) => {
   const user = await User.findById(userId).select('+password');
   if (!user) {
@@ -319,6 +341,7 @@ export const UserService = {
   updateProfileToDB,
   updateProfileByEmailToDB,
   updateStripeAccountIdByEmail,
+  updateUserOnlineStatusByEmail,
   deleteUser,
   verifyUserPassword,
 

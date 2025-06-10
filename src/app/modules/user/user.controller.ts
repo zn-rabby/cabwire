@@ -93,6 +93,25 @@ const updateStripeAccountIdByEmail = catchAsync(
   }
 );
 
+const updateUserOnlineStatusByEmail = catchAsync(
+  async (req: Request, res: Response) => {
+    const email = req.params.email;
+    const { isOnline } = req.body;
+
+    const result = await UserService.updateUserOnlineStatusByEmail(
+      email,
+      isOnline
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: 'User online status updated successfully',
+      data: result,
+    });
+  }
+);
+
 //delete profile
 const deleteProfile = catchAsync(async (req, res) => {
   const { id }: any = req.user;
@@ -252,6 +271,7 @@ export const UserController = {
   updateProfile,
   updateProfileByEmail,
   updateStripeAccountIdByEmail,
+  updateUserOnlineStatusByEmail,
   deleteProfile,
   // user
   getTotalUserCount,

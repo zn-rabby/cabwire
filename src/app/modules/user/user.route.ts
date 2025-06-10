@@ -55,6 +55,11 @@ router.patch(
   UserController.updateStripeAccountIdByEmail
 );
 
+router.patch(
+  '/update-online-status/:email',
+  UserController.updateUserOnlineStatusByEmail
+);
+
 router.delete(
   '/delete-my-account',
   auth(
