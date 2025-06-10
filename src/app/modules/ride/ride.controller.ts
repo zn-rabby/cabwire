@@ -143,15 +143,12 @@ const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
   const { rideId, otp } = req.body;
 
   // Validate input
-  if (!rideId || otp === undefined) {
+  if (!rideId || otp === undefined || otp === '') {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID and OTP are required');
   }
 
-  // Convert otp to number safely
-  const enteredOtp = Number(otp);
-  if (isNaN(enteredOtp)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'OTP must be a number');
-  }
+  // Convert otp to string (don't convert to number)
+  const enteredOtp = otp.toString();
 
   const ride = await RideService.completeRideWithOtp(rideId, enteredOtp);
 

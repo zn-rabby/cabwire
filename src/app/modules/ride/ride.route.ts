@@ -48,7 +48,7 @@ router.patch(
 );
 
 router.post(
-  '/verify-ride-otp',
+  '/verify-ride-otp/:id',
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
   RideController.completeRideWithOtp
 );
