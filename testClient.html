@@ -1,71 +1,222 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Ride Request Test</title>
-  </head>
-  <body>
-    <h1>🚗 Ride Request Test</h1>
-    <p>Open browser console to see ride request logs.</p>
+<head>
+  <meta charset="UTF-8" />
+  <title>Driver Ride Request Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #log-container {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      height: 300px;
+      overflow-y: auto;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+    }
+    .log-entry {
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    button {
+      padding: 8px 15px;
+      margin-right: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    #offline-btn {
+      background: #f44336;
+    }
+    #offline-btn:hover {
+      background: #d32f2f;
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .online {
+      background: #4CAF50;
+    }
+    .offline {
+      background: #f44336;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚖 Driver Ride Request Test</h1>
+  
+  <div>
+    <span class="status-indicator offline" id="status-indicator"></span>
+    <span id="status-text">Disconnected</span>
+  </div>
+  
+  <div id="driver-info" style="margin: 15px 0; display: none;">
+    <h3>Driver Information</h3>
+    <p><strong>ID:</strong> <span id="driver-id"></span></p>
+    <p><strong>Status:</strong> <span id="driver-status">Offline</span></p>
+    <p><strong>Last Online:</strong> <span id="last-online">-</span></p>
+  </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script>
-      // Update this to match your backend server's IP and port
-      const socket = io('http://10.0.60.114:5005');
+  <div id="controls" style="margin: 20px 0;">
+    <button id="connect-btn">Connect as Driver</button>
+    <button id="offline-btn" disabled>Go Offline</button>
+    <button id="test-request-btn" disabled>Simulate Ride Request</button>
+  </div>
 
-      socket.on('connect', () => {
-        console.log('✅ Connected to socket server');
+  <h3>Event Log</h3>
+  <div id="log-container"></div>
 
-        // Join as a driver (example: use actual driver ID in real app)
-        socket.emit('join', 'rider::68404642c059928b97088a3b');
-      });
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    const socket = io('http://10.0.60.114:5005', {
+      autoConnect: false,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
 
-      // Listen for ride requests
-      socket.on('ride-requested::', data => {
-        console.log('🚖 New Ride Request Received:');
-        console.log('Ride ID:', data.rideId);
-        console.log('User ID:', data.userId);
-        console.log('Pickup Location:', data.pickupLocation);
-        console.log('Dropoff Location:', data.dropoffLocation);
-        console.log('Status:', data.status);
-        console.log('Fare:', data.fare);
-        console.log('Distance (km):', data.distance);
-        console.log('Duration (mins):', data.duration);
-      });
+    // DOM elements
+    const statusIndicator = document.getElementById('status-indicator');
+    const statusText = document.getElementById('status-text');
+    const driverIdEl = document.getElementById('driver-id');
+    const driverStatusEl = document.getElementById('driver-status');
+    const lastOnlineEl = document.getElementById('last-online');
+    const logContainer = document.getElementById('log-container');
+    const connectBtn = document.getElementById('connect-btn');
+    const offlineBtn = document.getElementById('offline-btn');
+    const testRequestBtn = document.getElementById('test-request-btn');
 
-      // Listen for ride acceptance events
-      socket.on('ride-accepted::', data => {
-        console.log('✅ Ride Accepted!');
-        console.log('Ride ID:', data.rideId);
-        console.log('Accepted By Driver ID:', data.driverId);
-      });
+    // Driver state
+    let driverId = 'driver_' + Math.random().toString(36).substr(2, 9);
+    let isOnline = false;
 
-      // Listen for ride cancellation
-      socket.on('ride-cancelled::', data => {
-        console.log('❌ Ride Cancelled!');
-        console.log('Ride ID:', data.rideId);
-        console.log('Cancelled By Driver ID:', data.driverId);
-      });
+    // Logging function
+    function addLog(message, type = 'info') {
+      const logEntry = document.createElement('div');
+      logEntry.className = `log-entry ${type}`;
+      logEntry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logContainer.appendChild(logEntry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
 
-      // Listen for ride continuation
-      socket.on('ride-continue::', data => {
-        console.log('▶️ Ride Continued!');
-        console.log('Ride ID:', data.rideId);
-        console.log('Continued By Driver ID:', data.driverId);
-      });
+    // Update UI state
+    function updateConnectionStatus(connected) {
+      statusIndicator.className = `status-indicator ${connected ? 'online' : 'offline'}`;
+      statusText.textContent = connected ? 'Connected' : 'Disconnected';
+    }
 
-      // Optional: other existing listeners
-      socket.on('delivery-updated', data => {
-        console.log('📦 Delivery update:', data);
-      });
+    function updateDriverStatus(online) {
+      isOnline = online;
+      driverStatusEl.textContent = online ? 'Online' : 'Offline';
+      lastOnlineEl.textContent = new Date().toLocaleString();
+      offlineBtn.disabled = !online;
+      testRequestBtn.disabled = !online;
+    }
 
-      socket.on('rider-location-updated', data => {
-        console.log('📍 Rider location update:', data);
-      });
+    // Socket event handlers
+    socket.on('connect', () => {
+      updateConnectionStatus(true);
+      addLog('✅ Connected to socket server');
+      
+      // Join as driver
+      socket.emit('driver-online', driverId);
+      addLog(`Driver ${driverId} joined their room`);
+      
+      document.getElementById('driver-info').style.display = 'block';
+      driverIdEl.textContent = driverId;
+      updateDriverStatus(true);
+    });
 
-      socket.on('disconnect', () => {
-        console.log('❌ Disconnected from server');
-      });
-    </script>
-  </body>
+    socket.on('disconnect', () => {
+      updateConnectionStatus(false);
+      addLog('❌ Disconnected from server');
+      updateDriverStatus(false);
+    });
+
+    socket.on('error', (error) => {
+      addLog(`⚠️ Socket Error: ${error}`, 'error');
+    });
+
+    socket.on('ride-requested', (data) => {
+      addLog('🚖 New Ride Request Received:', 'event');
+      addLog(`- Ride ID: ${data.rideId}`);
+      addLog(`- User ID: ${data.userId}`);
+      addLog(`- Pickup: ${JSON.stringify(data.pickupLocation)}`);
+      addLog(`- Dropoff: ${JSON.stringify(data.dropoffLocation)}`);
+      addLog(`- Fare: $${data.fare}`);
+      addLog(`- Distance: ${data.distance} km`);
+      addLog(`- Duration: ${data.duration} mins`);
+
+      // Simulate accepting the ride
+      setTimeout(() => {
+        addLog('⏳ Simulating ride acceptance...');
+        socket.emit('accept-ride', {
+          rideId: data.rideId,
+          driverId: driverId
+        });
+      }, 3000);
+    });
+
+    socket.on('ride-status-updated', (data) => {
+      addLog(`🔔 Ride Status Update: ${data.status} for ride ${data.rideId}`, 'event');
+    });
+
+    socket.on('driver-status-changed', (data) => {
+      addLog(`👨‍✈️ Driver Status Change: ${data.status}`, 'event');
+    });
+
+    // Button handlers
+    connectBtn.addEventListener('click', () => {
+      if (socket.connected) {
+        addLog('Already connected');
+        return;
+      }
+      addLog('Connecting to server...');
+      socket.connect();
+    });
+
+    offlineBtn.addEventListener('click', () => {
+      socket.emit('driver-offline', driverId);
+      addLog(`Driver ${driverId} going offline`);
+      updateDriverStatus(false);
+    });
+
+    testRequestBtn.addEventListener('click', () => {
+      // Simulate receiving a ride request (for testing without backend)
+      const testData = {
+        rideId: 'ride_' + Math.random().toString(36).substr(2, 9),
+        userId: 'user_' + Math.random().toString(36).substr(2, 9),
+        pickupLocation: { lat: 40.7128, lng: -74.0060 },
+        dropoffLocation: { lat: 40.7328, lng: -73.9860 },
+        status: 'requested',
+        fare: 15.50,
+        distance: 3.2,
+        duration: 12
+      };
+      socket.emit('ride-requested', testData);
+      addLog('Sent test ride request', 'test');
+    });
+
+    // Initialize
+    updateConnectionStatus(false);
+    addLog('Ready to connect. Click "Connect as Driver" to begin.');
+  </script>
+</body>
 </html>

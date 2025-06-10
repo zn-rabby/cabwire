@@ -135,9 +135,8 @@ const createRideToDB = async (
   const io = global.io;
 
   if (io && ride?._id) {
-    // Emit to each driver in their specific room
     nearestDrivers.forEach(driver => {
-      io.to(`driver::${driver._id}`).emit('ride-requested', {
+      io.emit('ride-requested::', {
         rideId: ride._id,
         userId: ride.userId,
         pickupLocation: ride.pickupLocation,
@@ -167,25 +166,12 @@ const acceptRide = async (rideId: string, driverId: string) => {
   ride.rideStatus = 'accepted';
   await ride.save();
 
-  // @ts-ignore
-  const io = global.io;
-
-  if (io && ride?._id) {
-    // Notify the passenger in their user-specific room
-    io.to(`user::${ride.userId}`).emit('ride-accepted', {
+  if (global.io && ride?._id) {
+    global.io.emit('ride-accepted::', {
       rideId: ride._id,
-      driverId,
-      rideStatus: ride.rideStatus,
-    });
-
-    // Notify all participants in the ride room
-    io.to(`ride::${ride._id}`).emit('ride-status-updated', {
-      rideId: ride._id,
-      status: ride.rideStatus,
       driverId,
     });
   }
-
   return ride;
 };
 
