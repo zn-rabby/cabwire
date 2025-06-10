@@ -104,6 +104,28 @@ const updateProfileByEmailToDB = async (
   return updatedDoc;
 };
 
+const updateStripeAccountIdByEmail = async (
+  email: string,
+  stripeAccountId?: string
+): Promise<Partial<IUser | null>> => {
+  const isExistUser = await User.findOne({ email });
+
+  if (!isExistUser) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "User with this email doesn't exist!"
+    );
+  }
+
+  const updatedDoc = await User.findOneAndUpdate(
+    { email },
+    { stripeAccountId },
+    { new: true }
+  );
+
+  return updatedDoc;
+};
+
 const verifyUserPassword = async (userId: string, password: string) => {
   const user = await User.findById(userId).select('+password');
   if (!user) {
@@ -296,6 +318,7 @@ export const UserService = {
   getUserProfileFromDB,
   updateProfileToDB,
   updateProfileByEmailToDB,
+  updateStripeAccountIdByEmail,
   deleteUser,
   verifyUserPassword,
 

@@ -50,6 +50,11 @@ router.patch(
   }
 );
 
+router.patch(
+  '/update-stripe-account/:email',
+  UserController.updateStripeAccountIdByEmail
+);
+
 router.delete(
   '/delete-my-account',
   auth(

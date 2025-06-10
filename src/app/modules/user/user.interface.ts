@@ -37,6 +37,7 @@ export type IUser = {
   };
   gender?: 'male' | 'female' | 'others';
   dateOfBirth?: Date;
+  stripeAccountId?: string;
   driverLicense?: IDriverLicenseInfo;
   driverVehicles?: IDriverVehiclesInfo;
   isOnline: boolean;

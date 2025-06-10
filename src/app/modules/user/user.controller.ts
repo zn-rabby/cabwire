@@ -74,6 +74,25 @@ const updateProfileByEmail = catchAsync(
   }
 );
 
+const updateStripeAccountIdByEmail = catchAsync(
+  async (req: Request, res: Response) => {
+    const email = req.params.email;
+    const { stripeAccountId } = req.body;
+
+    const result = await UserService.updateStripeAccountIdByEmail(
+      email,
+      stripeAccountId
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: 'Stripe account ID updated successfully',
+      data: result,
+    });
+  }
+);
+
 //delete profile
 const deleteProfile = catchAsync(async (req, res) => {
   const { id }: any = req.user;
@@ -232,6 +251,7 @@ export const UserController = {
   getUserProfile,
   updateProfile,
   updateProfileByEmail,
+  updateStripeAccountIdByEmail,
   deleteProfile,
   // user
   getTotalUserCount,
