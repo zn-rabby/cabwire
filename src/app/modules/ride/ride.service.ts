@@ -11,37 +11,66 @@ import generateOTP from '../../../util/generateOTP';
 import { calculateDistance } from '../../../util/calculateDistance';
 
 // find nearest riders
-export const findNearestOnlineRiders = async (location: {
-  lat?: number;
-  lng?: number;
+// export const findNearestOnlineRiders = async (location: {
+//   lat?: number;
+//   lng?: number;
+// }) => {
+//   if (
+//     !location ||
+//     typeof location.lat !== 'number' ||
+//     typeof location.lng !== 'number'
+//   ) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid or missing lat/lng');
+//   }
+
+//   const coordinates: [number, number] = [location.lng, location.lat]; // GeoJSON expects [lng, lat]
+
+//   const result = await User.find({
+//     role: 'DRIVER',
+//     // isOnline: true,
+//     'geoLocation.coordinates': { $ne: [0, 0] },
+//     geoLocation: {
+//       $near: {
+//         $geometry: {
+//           type: 'Point',
+//           coordinates,
+//         },
+//         $maxDistance: 5000, // 5 km radius
+//       },
+//     },
+//   });
+
+//   return result;
+// };
+
+// find nearest riders
+const findNearestOnlineRiders = async (location: {
+  coordinates: [number, number];
 }) => {
   if (
-    !location ||
-    typeof location.lat !== 'number' ||
-    typeof location.lng !== 'number'
+    !location.coordinates ||
+    !Array.isArray(location.coordinates) ||
+    location.coordinates.length !== 2
   ) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid or missing lat/lng');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid coordinates');
   }
-
-  const coordinates: [number, number] = [location.lng, location.lat]; // GeoJSON expects [lng, lat]
-
   const result = await User.find({
     role: 'DRIVER',
-    // isOnline: true,
+    isOnline: true,
     'geoLocation.coordinates': { $ne: [0, 0] },
     geoLocation: {
       $near: {
         $geometry: {
           type: 'Point',
-          coordinates,
+          coordinates: location.coordinates,
         },
         $maxDistance: 5000, // 5 km radius
       },
     },
   });
-
   return result;
 };
+
 
 const createRideToDB = async (
   payload: Partial<IRide>,
