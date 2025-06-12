@@ -7,9 +7,37 @@ import Stripe from 'stripe';
 import config from '../../../config';
 import { RideBooking } from '../booking/booking.model';
 import { Ride } from '../ride/ride.model';
+import { User } from '../user/user.model';
 
 const stripe = new Stripe(config.stripe_secret_key as string);
 // const YOUR_DOMAIN = '10.0.70.163:5005'; // replace in production
+
+export async function createOrGetStripeAccount(
+  userId: string
+): Promise<string> {
+  const driver = await User.findById(userId);
+
+  if (!driver) throw new Error('Driver not found');
+
+  if (driver.role !== 'DRIVER') {
+    throw new Error('Only drivers can create a Stripe account');
+  }
+
+  if (!driver.email) throw new Error('Driver email missing');
+  console.log(driver, driver.email);
+
+  if (driver.stripeAccountId) return driver.stripeAccountId;
+
+  const account = await stripe.accounts.create({
+    type: 'express',
+    email: driver.email,
+  });
+  console.log(account);
+
+  await User.findByIdAndUpdate(userId, { stripeAccountId: account.id });
+
+  return account.id;
+}
 
 const createPayment = async (payload: Partial<IPayment>) => {
   // 1️⃣ Validate required IDs
@@ -102,6 +130,20 @@ const createPayment = async (payload: Partial<IPayment>) => {
     redirectUrl: stripeSessionUrl,
   };
 };
+
+// Generate Stripe onboarding link
+export async function createStripeOnboardingLink(
+  stripeAccountId: string
+): Promise<string> {
+  const accountLink = await stripe.accountLinks.create({
+    account: stripeAccountId,
+    refresh_url: 'https://yourapp.com/reauth',
+    return_url: 'https://yourapp.com/success',
+    type: 'account_onboarding',
+  });
+
+  return accountLink.url;
+}
 // const getAllPayments = async () => {
 //   const payments = await Payment.find().sort({ createdAt: -1 }); // optional: latest first
 //   return payments;

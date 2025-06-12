@@ -11,7 +11,6 @@ import generateOTP from '../../../util/generateOTP';
 import { calculateDistance } from '../../../util/calculateDistance';
 import { sendNotifications } from '../../../util/notificaton';
 
-// import { IUser } from '../user/user.interface';
 // import { OnlineDriverStore } from '../../../util/OnlineDriverStore';
 
 // type UserDocument = Document & IUser;

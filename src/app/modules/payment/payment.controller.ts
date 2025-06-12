@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { PaymentService } from './payment.service';
+import { createOrGetStripeAccount, createStripeOnboardingLink, PaymentService } from './payment.service';
 import catchAsync from '../../../shared/catchAsync';
 
 const createPayment = async (
@@ -16,6 +16,20 @@ const createPayment = async (
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const createConnectLink = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.id;
+
+    const stripeAccountId = await createOrGetStripeAccount(userId);
+    const url = await createStripeOnboardingLink(stripeAccountId);
+
+    res.json({ url });
+  } catch (error) {
+    console.error('Stripe Connect Error:', error);
+    res.status(500).json({ error: 'Stripe connect account creation failed' });
   }
 };
 
