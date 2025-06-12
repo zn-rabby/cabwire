@@ -29,28 +29,28 @@ app.use(express.static('uploads'));
 
 //router
 app.use('/api/v1', router);
-// app.get('/check-balance', async (req, res) => {
-//   try {
-//     const balance = await stripe.balance.retrieve();
+app.get('/check-balance', async (req, res) => {
+  try {
+    const balance = await stripe.balance.retrieve();
 
-//     console.log('🟢 Available Balance:', balance.available);
-//     console.log('🟡 Pending Balance:', balance.pending);
+    console.log('🟢 Available Balance:', balance.available);
+    console.log('🟡 Pending Balance:', balance.pending);
 
-//     return res.status(200).json({
-//       success: true,
-//       available: balance.available,
-//       pending: balance.pending,
-//     });
-//   } catch (error: any) {
-//     console.error('🔴 Error retrieving balance:', error);
+    return res.status(200).json({
+      success: true,
+      available: balance.available,
+      pending: balance.pending,
+    });
+  } catch (error: any) {
+    console.error('🔴 Error retrieving balance:', error);
 
-//     return res.status(500).json({
-//       success: false,
-//       message: 'Failed to retrieve balance.',
-//       error: error.message,
-//     });
-//   }
-// });
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve balance.',
+      error: error.message,
+    });
+  }
+});
 
 //live response
 app.get('/', (req: Request, res: Response) => {
