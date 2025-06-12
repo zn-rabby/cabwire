@@ -270,23 +270,16 @@ const cancelRide = async (rideId: string, driverId: string) => {
     );
   }
 
-  // Only assigned driver can cancel
-  // if (ride.driverId?.toString() !== driverId.toString()) {
-  //   throw new ApiError(
-  //     StatusCodes.FORBIDDEN,
-  //     'You are not authorized to cancel this ride'
-  //   );
-  // }
-
   // Update status
   ride.rideStatus = 'cancelled';
   await ride.save();
 
   // Emit ride-cancelled event
-  if (global.io && ride._id) {
-    global.io.emit('ride-cancelled::', {
-      rideId: ride._id,
+  if (ride._id) {
+    sendNotifications({
+      receiver: ride._id,
       driverId,
+      text: 'Cancel ride successsfully',
     });
   }
 
@@ -303,22 +296,15 @@ const continueRide = async (rideId: string, driverId: string) => {
       'Invalid ride or already continue'
     );
   }
-  // Only assigned driver can cancel
-  // if (ride.driverId?.toString() !== driverId.toString()) {
-  //   throw new ApiError(
-  //     StatusCodes.FORBIDDEN,
-  //     'You are not authorized to cancel this ride'
-  //   );
-  // }
-  // Update status
+
   ride.rideStatus = 'continue';
   await ride.save();
 
-  // Emit ride-continue event
-  if (global.io && ride._id) {
-    global.io.emit('ride-continue::', {
-      rideId: ride._id,
+  if (ride._id) {
+    sendNotifications({
+      receiver: ride._id,
       driverId,
+      text: 'Continue ride successsfully',
     });
   }
 
@@ -423,10 +409,14 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
       'Ride state changed during verification'
     );
   }
+
   // Emit ride-completed event
-  if (global.io && ride._id) {
-    global.io.emit('ride-completed::', {
-      rideId: ride._id,
+  if (updatedRide._id) {
+    sendNotifications({
+      // event: 'ride-completed',
+      rideId: updatedRide._id,
+      receiver: updatedRide._id,
+      text: 'Ride completed successfully',
     });
   }
 
