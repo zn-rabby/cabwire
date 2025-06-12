@@ -9,6 +9,7 @@ import { calculateFare } from './ride.utils';
 import { User } from '../user/user.model';
 import generateOTP from '../../../util/generateOTP';
 import { calculateDistance } from '../../../util/calculateDistance';
+import { sendNotifications } from '../../../util/notificaton';
 
 // import { IUser } from '../user/user.interface';
 // import { OnlineDriverStore } from '../../../util/OnlineDriverStore';
@@ -201,9 +202,10 @@ const createRideToDB = async (
   const io = global.io;
   if (io && ride?._id) {
     nearestDrivers.forEach(driver => {
-      io.to(driver._id.toString()).emit('ride-requested::', {
+      // console.log('driver', driver, io.to(driver._id.toString()));
+      io.emit(`ride-requested::${driver.id}`, {
         rideId: ride._id,
-        userId: ride.userId,
+        userId: ride.id,
         pickupLocation: ride.pickupLocation,
         dropoffLocation: ride.dropoffLocation,
         status: ride.rideStatus,
@@ -245,10 +247,18 @@ const acceptRide = async (rideId: string, driverId: string) => {
     );
   }
   // Notify all drivers that ride is accepted
-  if (global.io && updatedRide._id) {
-    global.io.emit('ride-accepted::', {
-      rideId: updatedRide._id,
+  // if (global.io && updatedRide._id) {
+  //   global.io.emit(`ride-accepted::${updatedRide._id}`, {
+  //     rideId: updatedRide._id,
+  //     driverId,
+  //   });
+  // }
+  if (updatedRide._id) {
+    console.log(222, updatedRide._id);
+    sendNotifications({
+      receiver: updatedRide._id,
       driverId,
+      text: 'Ride create successsfully',
     });
   }
   return updatedRide;

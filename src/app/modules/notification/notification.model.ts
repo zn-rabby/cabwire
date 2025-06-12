@@ -5,7 +5,7 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
   {
     text: {
       type: String,
-      required: true,
+      required: false,
     },
     receiver: {
       type: Schema.Types.ObjectId,
