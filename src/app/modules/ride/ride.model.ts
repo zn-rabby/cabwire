@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
 import { IRide } from './ride.interface';
 
-const locationSchema = {
+export const locationSchema = {
   lat: { type: Number, required: true },
   lng: { type: Number, required: true },
   address: { type: String },

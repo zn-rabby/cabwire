@@ -200,18 +200,22 @@ const createRideToDB = async (
 
   // Emit socket events to each driver room
   const io = global.io;
-  if (io && ride?._id) {
+
+  if (ride?._id) {
     nearestDrivers.forEach(driver => {
-      // console.log('driver', driver, io.to(driver._id.toString()));
-      io.emit(`ride-requested::${driver.id}`, {
+      console.log(44, driver?._id);
+      sendNotifications({
+        text: 'Ride created successfully',
         rideId: ride._id,
-        userId: ride.id,
+        userId: ride.userId,
+        receiver: driver?._id, // socket emit এই receiver আইডিতে হবে
         pickupLocation: ride.pickupLocation,
         dropoffLocation: ride.dropoffLocation,
         status: ride.rideStatus,
         fare: ride.fare,
         distance: ride.distance,
         duration: ride.duration,
+        event: 'ride-requested', // custom event name
       });
     });
   }
@@ -229,7 +233,6 @@ const acceptRide = async (rideId: string, driverId: string) => {
       'Invalid ride or already accepted'
     );
   }
-
   // Atomic update check
   const updatedRide = await Ride.findOneAndUpdate(
     { _id: rideId, rideStatus: 'requested' },
@@ -246,19 +249,11 @@ const acceptRide = async (rideId: string, driverId: string) => {
       'Ride has already been accepted by another driver.'
     );
   }
-  // Notify all drivers that ride is accepted
-  // if (global.io && updatedRide._id) {
-  //   global.io.emit(`ride-accepted::${updatedRide._id}`, {
-  //     rideId: updatedRide._id,
-  //     driverId,
-  //   });
-  // }
   if (updatedRide._id) {
-    console.log(222, updatedRide._id);
     sendNotifications({
       receiver: updatedRide._id,
       driverId,
-      text: 'Ride create successsfully',
+      text: 'Ride accept successsfully',
     });
   }
   return updatedRide;

@@ -23,7 +23,6 @@ const findNearestOnlineRiders = catchAsync(async (req, res) => {
 // ride.controller.ts
 const createRide = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  console.log(req.user);
 
   if (!userId) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
