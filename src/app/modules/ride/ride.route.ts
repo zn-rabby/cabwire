@@ -18,20 +18,21 @@ router
   );
 
 router.post('/nearest-driver', RideController.findNearestOnlineRiders);
+
 router.patch(
-  '/accept-ride-driver/:id', // param name "id" matches controller
+  '/accept-ride-driver/:id',  
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER),
   RideController.acceptRide
 );
 
 router.patch(
-  '/cancel-ride-driver/:id', // param name "id" must match controller
+  '/cancel-ride-driver/:id', 
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
   RideController.cancelRide
 );
 
 router.patch(
-  '/continue-ride-driver/:id', // param name "id" must match controller
+  '/continue-ride-driver/:id',  
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
   RideController.continueRide
 );

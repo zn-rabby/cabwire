@@ -6,10 +6,15 @@ const socket = (io: Server) => {
   io.on('connection', socket => {
     logger.info(colors.blue('A user connected'));
 
-    socket.on('join', (roomId: string) => {
-      socket.join(roomId);
-      logger.info(colors.cyan(`Socket joined room: ${roomId}`));
+    socket.on('join', (userId: string) => {
+      socket.join(userId);
+      logger.info(colors.cyan(`Socket joined room: ${userId}`));
     });
+
+    // socket.on('join', async (driverId: string) => {
+    //   socket.join(driverId);
+    //   await setDriverOnline(driverId, socket.id);
+    // });
 
     //disconnect
     socket.on('disconnect', () => {

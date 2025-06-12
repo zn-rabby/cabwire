@@ -10,6 +10,49 @@ import { User } from '../user/user.model';
 import generateOTP from '../../../util/generateOTP';
 import { calculateDistance } from '../../../util/calculateDistance';
 
+// import { IUser } from '../user/user.interface';
+// import { OnlineDriverStore } from '../../../util/OnlineDriverStore';
+
+// type UserDocument = Document & IUser;
+
+// export const getOnlineDriversFromStore = (): {
+//   driverId: string;
+//   socketId: string;
+// }[] => {
+//   return OnlineDriverStore.getDrivers();
+// };
+
+// export const setDriverOnline = async (
+//   driverId: string,
+//   socketId: string
+// ): Promise<void> => {
+//   OnlineDriverStore.addDriver(driverId, socketId);
+//   await User.findByIdAndUpdate(driverId, { isOnline: true });
+// };
+
+// export const removeDriverOnline = async (socketId: string): Promise<void> => {
+//   const driver = OnlineDriverStore.getDrivers().find(
+//     d => d.socketId === socketId
+//   );
+//   if (driver) {
+//     await User.findByIdAndUpdate(driver.driverId, { isOnline: false });
+//   }
+//   OnlineDriverStore.removeBySocket(socketId);
+// };
+
+// export const getOnlineDriversFromDB = async (): Promise<UserDocument[]> => {
+//   try {
+//     const drivers = await User.find({
+//       role: 'driver',
+//       isOnline: true,
+//     });
+//     return drivers;
+//   } catch (error) {
+//     console.error('Error fetching online drivers:', error);
+//     throw error;
+//   }
+// };
+
 // find nearest riders
 // export const findNearestOnlineRiders = async (location: {
 //   lat?: number;
@@ -71,7 +114,7 @@ const findNearestOnlineRiders = async (location: {
   return result;
 };
 
-
+// create ride
 const createRideToDB = async (
   payload: Partial<IRide>,
   userObjectId: Types.ObjectId
@@ -79,7 +122,7 @@ const createRideToDB = async (
   const pickup = payload.pickupLocation;
   const dropoff = payload.dropoffLocation;
 
-  // Validate pickup & dropoff
+  // Validate input
   if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -87,7 +130,6 @@ const createRideToDB = async (
     );
   }
 
-  // Validate duration
   if (typeof payload.duration !== 'number' || payload.duration <= 0) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -95,7 +137,6 @@ const createRideToDB = async (
     );
   }
 
-  // Validate service & category
   if (!payload.service || !payload.category) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -108,7 +149,6 @@ const createRideToDB = async (
     Service.findById(payload.service),
     Category.findById(payload.category),
   ]);
-
   if (!service || !category) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -116,10 +156,8 @@ const createRideToDB = async (
     );
   }
 
-  // Calculate distance
   const distance = calculateDistance(pickup, dropoff);
 
-  // Calculate fare
   let fare: number;
   try {
     fare = calculateFare({
@@ -146,11 +184,11 @@ const createRideToDB = async (
     paymentStatus: 'pending',
   });
 
-  // Find nearest drivers (within 5km)
+  // Find nearby drivers (within 5km)
   const nearestDrivers = await findNearestOnlineRiders({
-    lat: pickup.lat,
-    lng: pickup.lng,
+    coordinates: [pickup.lng, pickup.lat],
   });
+  console.log('nearsest drivers=', nearestDrivers);
 
   if (!nearestDrivers.length) {
     throw new ApiError(
@@ -158,14 +196,12 @@ const createRideToDB = async (
       'No available drivers near your pickup location.'
     );
   }
-  console.log('dd', nearestDrivers);
 
-  // @ts-ignore
+  // Emit socket events to each driver room
   const io = global.io;
-
   if (io && ride?._id) {
     nearestDrivers.forEach(driver => {
-      io.emit('ride-requested::', {
+      io.to(driver._id.toString()).emit('ride-requested::', {
         rideId: ride._id,
         userId: ride.userId,
         pickupLocation: ride.pickupLocation,
@@ -181,6 +217,7 @@ const createRideToDB = async (
   return ride;
 };
 
+// accept ride
 const acceptRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
 
@@ -191,19 +228,33 @@ const acceptRide = async (rideId: string, driverId: string) => {
     );
   }
 
-  ride.driverId = new Types.ObjectId(driverId);
-  ride.rideStatus = 'accepted';
-  await ride.save();
+  // Atomic update check
+  const updatedRide = await Ride.findOneAndUpdate(
+    { _id: rideId, rideStatus: 'requested' },
+    {
+      driverId: new Types.ObjectId(driverId),
+      rideStatus: 'accepted',
+    },
+    { new: true }
+  );
 
-  if (global.io && ride?._id) {
+  if (!updatedRide) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Ride has already been accepted by another driver.'
+    );
+  }
+  // Notify all drivers that ride is accepted
+  if (global.io && updatedRide._id) {
     global.io.emit('ride-accepted::', {
-      rideId: ride._id,
+      rideId: updatedRide._id,
       driverId,
     });
   }
-  return ride;
+  return updatedRide;
 };
 
+// cancel ride
 const cancelRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
 
@@ -236,6 +287,8 @@ const cancelRide = async (rideId: string, driverId: string) => {
 
   return ride;
 };
+
+// continue ride
 const continueRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
 
@@ -266,6 +319,8 @@ const continueRide = async (rideId: string, driverId: string) => {
 
   return ride;
 };
+
+// request colose ride
 const requestCloseRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
 
@@ -298,6 +353,7 @@ const requestCloseRide = async (rideId: string, driverId: string) => {
   };
 };
 
+// complete ride with otp
 const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
   console.log('Verifying OTP for ride:', rideId, 'with OTP:', enteredOtp);
 
@@ -361,6 +417,12 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
       StatusCodes.CONFLICT,
       'Ride state changed during verification'
     );
+  }
+  // Emit ride-completed event
+  if (global.io && ride._id) {
+    global.io.emit('ride-completed::', {
+      rideId: ride._id,
+    });
   }
 
   console.log('Ride completed successfully:', updatedRide._id);
