@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get(
   '/',
-  auth(USER_ROLES.USER),
+  auth(USER_ROLES.USER, USER_ROLES.DRIVER,USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   NotificationController.getNotificationFromDB
 );
 router.get(
