@@ -20,6 +20,32 @@ const findNearestOnlineRiders = catchAsync(async (req, res) => {
   });
 });
 
+const updateDriverLocation = catchAsync(async (req, res) => {
+  const user = req.user;
+  console.log('usesr=', user);
+
+  if (!user?.id) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized user');
+  }
+
+  const { coordinates } = req.body;
+
+  if (!coordinates) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Coordinates are required');
+  }
+
+  const result = await RideService.updateDriverLocation(user.id, {
+    coordinates,
+  });
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Driver location updated successfully',
+    data: result,
+  });
+});
+
 // ride.controller.ts
 const createRide = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
@@ -161,6 +187,7 @@ const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
 
 export const RideController = {
   findNearestOnlineRiders,
+  updateDriverLocation,
   createRide,
   acceptRide,
   cancelRide,

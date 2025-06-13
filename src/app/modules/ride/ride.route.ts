@@ -5,6 +5,17 @@ import { RideController } from './ride.controller';
 
 const router = express.Router();
 
+router.post('/nearest-driver', RideController.findNearestOnlineRiders);
+router.patch(
+  '/update-driver-location',
+  auth(
+    USER_ROLES.ADMIN,
+    USER_ROLES.DRIVER,
+    USER_ROLES.USER,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  RideController.updateDriverLocation
+);
 router
   .route('/create-ride')
   .post(
@@ -17,22 +28,20 @@ router
     RideController.createRide
   );
 
-router.post('/nearest-driver', RideController.findNearestOnlineRiders);
-
 router.patch(
-  '/accept-ride-driver/:id',  
+  '/accept-ride-driver/:id',
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER),
   RideController.acceptRide
 );
 
 router.patch(
-  '/cancel-ride-driver/:id', 
+  '/cancel-ride-driver/:id',
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
   RideController.cancelRide
 );
 
 router.patch(
-  '/continue-ride-driver/:id',  
+  '/continue-ride-driver/:id',
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
   RideController.continueRide
 );

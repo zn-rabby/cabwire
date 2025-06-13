@@ -115,27 +115,31 @@ const findNearestOnlineRiders = async (location: {
 };
 
 const updateDriverLocation = async (
-  driverId: string,
-  payload: {
-    coordinates: [number, number];
-    isOnline?: boolean;
-  }
+  riderId: string,
+  payload: { coordinates: [number, number] }
 ) => {
-  const { coordinates, isOnline } = payload;
+  if (!payload || !payload.coordinates) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Coordinates payload is required'
+    );
+  }
 
-  if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
+  const { coordinates } = payload;
+
+  if (!Array.isArray(coordinates) || coordinates.length !== 2) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid coordinates');
   }
 
   const updatedDriver = await User.findByIdAndUpdate(
-    driverId,
+    riderId,
     {
       $set: {
         geoLocation: {
           type: 'Point',
           coordinates: coordinates,
         },
-        ...(isOnline !== undefined && { isOnline }),
+        isOnline: true,
       },
     },
     { new: true }
