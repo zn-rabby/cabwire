@@ -21,15 +21,15 @@ export interface IRide extends Document {
   userId: Types.ObjectId;
   driverId?: Types.ObjectId;
 
-  service: Types.ObjectId;  
-  category: Types.ObjectId;  
+  service: Types.ObjectId;
+  category: Types.ObjectId;
 
   pickupLocation: ILocation;
   dropoffLocation: ILocation;
 
-  distance?: number;  
-  duration?: number;  
-  fare?: number;  
+  distance?: number;
+  duration?: number;
+  fare?: number;
 
   rideStatus: RideStatus;
 

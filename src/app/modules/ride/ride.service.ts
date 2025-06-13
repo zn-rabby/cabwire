@@ -114,6 +114,40 @@ const findNearestOnlineRiders = async (location: {
   return result;
 };
 
+const updateDriverLocation = async (
+  driverId: string,
+  payload: {
+    coordinates: [number, number];
+    isOnline?: boolean;
+  }
+) => {
+  const { coordinates, isOnline } = payload;
+
+  if (!coordinates || !Array.isArray(coordinates) || coordinates.length !== 2) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid coordinates');
+  }
+
+  const updatedDriver = await User.findByIdAndUpdate(
+    driverId,
+    {
+      $set: {
+        geoLocation: {
+          type: 'Point',
+          coordinates: coordinates,
+        },
+        ...(isOnline !== undefined && { isOnline }),
+      },
+    },
+    { new: true }
+  );
+
+  if (!updatedDriver) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found');
+  }
+
+  return updatedDriver;
+};
+
 // create ride
 const createRideToDB = async (
   payload: Partial<IRide>,
@@ -425,6 +459,7 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
 
 export const RideService = {
   findNearestOnlineRiders,
+  updateDriverLocation,
   createRideToDB,
   acceptRide,
   cancelRide,
