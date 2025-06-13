@@ -149,7 +149,6 @@ const updateDriverLocation = async (
     throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found');
   }
 
-  // Send a notification after successful update
   sendNotifications({
     receiver: updatedDriver._id, // receiver user id
     driverId: driverId, // same driver id for clarity
@@ -270,7 +269,6 @@ const createRideToDB = async (
 // accept ride
 const acceptRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
-
   if (!ride || ride.rideStatus !== 'requested') {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,

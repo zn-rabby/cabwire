@@ -1,4 +1,26 @@
 import { Request, Response } from 'express';
+import stripe from '../config/stripe';
+
+export async function transferToDriver({
+  stripeAccountId,
+  amount,
+  orderId,
+}: {
+  stripeAccountId: string;
+  amount: number; // in dollars
+  orderId: string;
+}) {
+  const transfer = await stripe.transfers.create({
+    amount: Math.round(amount * 100), // in cents
+    currency: 'usd',
+    destination: stripeAccountId,
+    metadata: {
+      orderId,
+    },
+  });
+
+  return transfer;
+}
 
 export const handleStripeWebhook = (request: Request, response: Response) => {
   const event = request.body;
