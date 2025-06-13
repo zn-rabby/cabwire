@@ -115,7 +115,7 @@ const findNearestOnlineRiders = async (location: {
 };
 
 const updateDriverLocation = async (
-  riderId: string,
+  driverId: string,
   payload: { coordinates: [number, number] }
 ) => {
   if (!payload || !payload.coordinates) {
@@ -132,12 +132,12 @@ const updateDriverLocation = async (
   }
 
   const updatedDriver = await User.findByIdAndUpdate(
-    riderId,
+    driverId,
     {
       $set: {
         geoLocation: {
           type: 'Point',
-          coordinates: coordinates,
+          coordinates,
         },
         isOnline: true,
       },
@@ -148,6 +148,13 @@ const updateDriverLocation = async (
   if (!updatedDriver) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Driver not found');
   }
+
+  // Send a notification after successful update
+  sendNotifications({
+    receiver: updatedDriver._id, // receiver user id
+    driverId: driverId, // same driver id for clarity
+    text: 'Driver location updated successfully',
+  });
 
   return updatedDriver;
 };
