@@ -2,7 +2,7 @@ import { IRide } from './ride.interface';
 import { Ride } from './ride.model';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
-import { Types } from 'mongoose';
+import { isValidObjectId, Types } from 'mongoose';
 import { Category } from '../category/category.model';
 import { Service } from '../service/service.model';
 import { calculateFare } from './ride.utils';
@@ -10,6 +10,11 @@ import { User } from '../user/user.model';
 import generateOTP from '../../../util/generateOTP';
 import { calculateDistance } from '../../../util/calculateDistance';
 import { sendNotifications } from '../../../util/notificaton';
+import { IPayment } from '../payment/payment.interface';
+import stripe from '../../../config/stripe';
+import { Payment } from '../payment/payment.model';
+import { transferToDriver } from '../../../helpers/handleStripeWebhook ';
+import { createLogger } from 'winston';
 
 // import { OnlineDriverStore } from '../../../util/OnlineDriverStore';
 
@@ -466,6 +471,139 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
   return updatedRide;
 };
 
+const createAndTransferPayment = async (
+  payload: Partial<IPayment> & { deliveryId?: string }
+) => {
+  // 1️⃣ Validate inputs
+  const { rideId, userId, method } = payload;
+
+  if (!rideId || !isValidObjectId(rideId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid rideId is required');
+  }
+  if (!userId || !isValidObjectId(userId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid userId is required');
+  }
+  if (!method || !['stripe', 'offline'].includes(method)) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Valid payment method is required'
+    );
+  }
+
+  // 2️⃣ Fetch ride
+  const ride = await Ride.findById(rideId);
+  if (!ride) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
+  }
+
+  const amount = ride.fare;
+  if (!amount || amount <= 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare amount');
+  }
+
+  // 3️⃣ Initialize variables
+  let paymentStatus: 'pending' | 'paid' | 'failed' = 'pending';
+  let transactionId: string | undefined;
+  let stripeSessionUrl: string | undefined;
+
+  // 4️⃣ Handle payment method
+  if (method === 'stripe') {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Ride Fare',
+              description: `Payment for ride ID: ${rideId}`,
+            },
+            unit_amount: Math.round(amount * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `https://your-domain.com/payment-success?rideId=${rideId}`,
+      cancel_url: `https://your-domain.com/payment-cancel?rideId=${rideId}`,
+      metadata: {
+        rideId: rideId.toString(),
+        userId: userId.toString(),
+        amount: amount.toString(),
+        method,
+      },
+    });
+
+    transactionId = session.id;
+    stripeSessionUrl = session.url ?? undefined;
+    paymentStatus = 'pending';
+  } else {
+    transactionId = `offline_txn_${Date.now()}`;
+    paymentStatus = 'paid';
+  }
+
+  // 5️⃣ Create payment
+  const payment = await Payment.create({
+    rideId,
+    userId,
+    amount,
+    method,
+    status: paymentStatus,
+    transactionId,
+    sessionUrl: stripeSessionUrl,
+    paidAt: paymentStatus === 'paid' ? new Date() : undefined,
+  });
+
+  if (!payment) {
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Payment creation failed'
+    );
+  }
+  console.log(999, payment);
+  console.log(111, ride);
+  // 5️⃣ Rider Balance Transfer (for linked order ride)
+  console.log(555, ride._id);
+  if (ride._id) {
+    try {
+      // 🔍 Fetch the original order ride
+      const orderRide = await Ride.findById(ride.orderId);
+      if (!orderRide) {
+        console.warn('⚠️ Linked order ride not found');
+        return;
+      }
+
+      // 🧑‍✈️ Find the driver who completed the order ride
+      const driver = await User.findById(orderRide.driverId);
+      if (!driver || !driver.stripeAccountId) {
+        console.warn('⚠️ Driver not found or missing Stripe account ID');
+        return;
+      }
+
+      // 💰 Proceed with transfer if fare is valid
+      if (orderRide.fare && orderRide.fare > 0) {
+        const transfer = await transferToDriver({
+          stripeAccountId: driver.stripeAccountId,
+          amount: orderRide.fare,
+          rideId: ride._id.toString(), // Correct ride ID
+        });
+
+        console.log('✅ Rider balance transferred:', transfer?.id);
+      } else {
+        console.warn('⚠️ Invalid fare amount for transfer');
+      }
+    } catch (error) {
+      console.error('❌ Rider balance transfer failed:', error);
+    }
+  }
+
+  // 🔚 Return response
+  return {
+    payment,
+    redirectUrl: stripeSessionUrl,
+  };
+};
+
 export const RideService = {
   findNearestOnlineRiders,
   updateDriverLocation,
@@ -475,4 +613,5 @@ export const RideService = {
   continueRide,
   requestCloseRide,
   completeRideWithOtp,
+  createAndTransferPayment,
 };

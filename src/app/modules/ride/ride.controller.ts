@@ -184,6 +184,18 @@ const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
     data: ride,
   });
 });
+const createAndTransferPayment = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await RideService.createAndTransferPayment(req.body);
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Payment created successfully',
+      data: result,
+    });
+  }
+);
 
 export const RideController = {
   findNearestOnlineRiders,
@@ -194,4 +206,5 @@ export const RideController = {
   continueRide,
   requestCloseRide,
   completeRideWithOtp,
+  createAndTransferPayment,
 };

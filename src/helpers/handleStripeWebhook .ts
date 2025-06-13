@@ -4,18 +4,18 @@ import stripe from '../config/stripe';
 export async function transferToDriver({
   stripeAccountId,
   amount,
-  orderId,
+  rideId,
 }: {
   stripeAccountId: string;
   amount: number; // in dollars
-  orderId: string;
+  rideId: string; // ✅ Corrected name (was: orderId)
 }) {
   const transfer = await stripe.transfers.create({
-    amount: Math.round(amount * 100), // in cents
+    amount: Math.round(amount * 100), // cents
     currency: 'usd',
     destination: stripeAccountId,
     metadata: {
-      orderId,
+      rideId,
     },
   });
 

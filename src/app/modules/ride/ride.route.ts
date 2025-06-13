@@ -63,4 +63,6 @@ router.post(
   RideController.completeRideWithOtp
 );
 
+router.post('/ridePayment/:id', RideController.createAndTransferPayment);
+
 export const RideRoutes = router;
