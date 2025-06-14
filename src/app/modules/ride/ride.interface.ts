@@ -10,6 +10,7 @@ export type RideStatus =
 
 export type PaymentMethod = 'stripe' | 'offline';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
+export type RideType = 'Car' | 'EmergencyCar' | 'RentalCar';
 
 export interface ILocation {
   lat: number;
@@ -35,6 +36,7 @@ export interface IRide extends Document {
 
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+  rideType: RideType;
 
   otp?: Number;
   paymentID?: string;
