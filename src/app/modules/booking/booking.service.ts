@@ -137,18 +137,14 @@ const continueRide = async (rideId: string, driverId: string) => {
       'Invalid ride or already continue'
     );
   }
-  // Only assigned driver can cancel
-  // if (ride.driverId?.toString() !== driverId.toString()) {
-  //   throw new ApiError(
-  //     StatusCodes.FORBIDDEN,
-  //     'You are not authorized to cancel this ride'
-  //   );
-  // }
+
   ride.rideStatus = 'continue';
   await ride.save();
 
-  if (global.io && ride._id) {
-    global.io.emit('ride-continue::', {
+  if (ride._id) {
+    sendNotifications({
+      text: 'Your Cabwire ride is now in continue!',
+      receiver: ride._id, // For socket emit
       rideId: ride._id,
       driverId,
     });
