@@ -102,26 +102,6 @@ const createRideBookingToDB = async (
   return bookingWithRide;
 };
 
-const bookRideByUser = async (
-  rideId: string,
-  userId: Types.ObjectId
-): Promise<ICabwire | null> => {
-  const ride = await CabwireModel.findOne({
-    _id: rideId,
-    rideStatus: 'requested',
-  });
-
-  if (!ride) {
-    throw new Error('Ride not available for booking');
-  }
-
-  // Update ride status to accepted
-  ride.rideStatus = 'book';
-  await ride.save();
-
-  return ride;
-};
-
 const cancelRide = async (rideId: string, driverId: string) => {
   const ride = await CabwireModel.findById(rideId);
 
@@ -131,22 +111,15 @@ const cancelRide = async (rideId: string, driverId: string) => {
       'Invalid ride or already cancelled'
     );
   }
-
-  // Only assigned driver can cancel
-  // if (ride.driverId?.toString() !== driverId.toString()) {
-  //   throw new ApiError(
-  //     StatusCodes.FORBIDDEN,
-  //     'You are not authorized to cancel this ride'
-  //   );
-  // }
-
   // Update status
   ride.rideStatus = 'cancelled';
   await ride.save();
 
   // Emit ride-cancelled event
-  if (global.io && ride._id) {
-    global.io.emit('ride-cancelled::', {
+  if (ride._id) {
+    sendNotifications({
+      text: 'New ride booking cancelled!',
+      receiver: ride._id, // For socket emit
       rideId: ride._id,
       driverId,
     });
@@ -185,7 +158,6 @@ const continueRide = async (rideId: string, driverId: string) => {
 
 export const RideBookingService = {
   createRideBookingToDB,
-  bookRideByUser,
   cancelRide,
   continueRide,
 };

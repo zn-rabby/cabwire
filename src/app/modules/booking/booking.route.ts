@@ -15,16 +15,7 @@ router.post(
   ),
   RideBookingController.createRideBooking
 );
-router.patch(
-  '/accept-cabwire/:rideId',
-  auth(
-    USER_ROLES.USER,
-    USER_ROLES.DRIVER,
-    USER_ROLES.ADMIN,
-    USER_ROLES.SUPER_ADMIN
-  ),
-  RideBookingController.bookRide
-);
+
 router.patch(
   '/cancel-cabwire/:id',
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),

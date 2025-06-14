@@ -29,23 +29,6 @@ const createRideBooking = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const bookRide = catchAsync(async (req: Request, res: Response) => {
-  const rideId = req.params.rideId;
-  const userId = req.body.userId as string;
-
-  const result = await RideBookingService.bookRideByUser(
-    rideId,
-    new Types.ObjectId(userId)
-  );
-
-  sendResponse(res, {
-    success: true,
-    statusCode: StatusCodes.OK,
-    message: 'Ride booked successfully by user',
-    data: result,
-  });
-});
-
 const cancelRide = catchAsync(async (req: Request, res: Response) => {
   const driverId = req.user?.id;
   const rideId = req.params.id;
@@ -98,7 +81,6 @@ const continueRide = catchAsync(async (req: Request, res: Response) => {
 
 export const RideBookingController = {
   createRideBooking,
-  bookRide,
   cancelRide,
   continueRide,
 };
