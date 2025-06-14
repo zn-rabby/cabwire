@@ -11,7 +11,7 @@ const createRideBookingToDB = async (
   payload: Partial<IRideBooking>,
   driverObjectId: Types.ObjectId
 ) => {
-  // ✅ Validate input
+  // ✅ Input Validation
   if (!payload.rideId) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'rideId is required');
   }
@@ -24,30 +24,40 @@ const createRideBookingToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, 'seatsBooked must be > 0');
   }
 
-  // 🔍 Find Ride
+  // 🔍 Find Ride by rideId
   const ride = await CabwireModel.findById(payload.rideId);
-  console.log(ride);
   if (!ride) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Associated ride not found');
   }
 
+  // ✅ Validate ride data
   if (!ride.distance || ride.distance <= 0 || !ride.fare) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid ride data required');
   }
 
-  // 💵 Set Fare
+  // 🧮 Check available seats
+  const availableSeats = ride.setAvailable || 0;
+
+  if (payload.seatsBooked > availableSeats) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      `Not enough seats available. Only ${availableSeats} seat(s) left.`
+    );
+  }
+
+  // 💵 Calculate fare (Optional: based on seat if fare is per person)
   const fare = ride.fare;
 
-  // 🎯 Prepare Booking
+  // 🎯 Prepare Booking Payload
   const bookingPayload: Partial<IRideBooking> = {
     ...payload,
     fare,
     driverId: driverObjectId,
     rideStatus: 'accepted',
-    paymentStatus: 'pending', // Default
+    paymentStatus: 'pending',
   };
 
-  // ✅ Create Booking
+  // ✅ Create RideBooking
   const booking = await RideBooking.create(bookingPayload);
   if (!booking) {
     throw new ApiError(
@@ -56,18 +66,20 @@ const createRideBookingToDB = async (
     );
   }
 
-  // 🔄 Update Ride status
-  await Ride.findByIdAndUpdate(payload.rideId, {
+  // 🔄 Update Ride: reduce setAvailable seats & change rideStatus
+  await CabwireModel.findByIdAndUpdate(payload.rideId, {
+    $inc: { setAvailable: -payload.seatsBooked }, // reduce available seats
     rideStatus: 'accepted',
   });
 
-  // 🔗 Return populated booking
+  // 🔗 Return populated booking with ride info
   const bookingWithRide = await RideBooking.findById(booking._id).populate(
     'rideId'
   );
 
   return bookingWithRide;
 };
+
 
 const bookRideByUser = async (
   rideId: string,
