@@ -28,4 +28,21 @@ router.patch(
   RideBookingController.continueRide
 );
 
+router.patch(
+  '/request-close-cabwire/:id',
+  auth(
+    USER_ROLES.ADMIN,
+    USER_ROLES.DRIVER,
+    USER_ROLES.USER,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  RideBookingController.requestCloseRide
+);
+
+router.post(
+  '/verify-cabwire-otp/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
+  RideBookingController.completeRideWithOtp
+);
+
 export const BookingRoutes = router;

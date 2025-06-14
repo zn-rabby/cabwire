@@ -21,6 +21,10 @@ const CabwireSchema = new Schema<ICabwire>(
     distance: { type: Number },
     duration: { type: Number },
     fare: { type: Number },
+    otp: {
+      type: String,
+      select: false,
+    },
     rideStatus: {
       type: String,
       enum: [

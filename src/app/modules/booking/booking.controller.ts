@@ -79,8 +79,49 @@ const continueRide = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const requestCloseRide = catchAsync(async (req: Request, res: Response) => {
+  const driverId = req.user?.id;
+  const rideId = req.params.id;
+
+  if (!driverId) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+
+  const data = await RideBookingService.requestCloseRide(rideId, driverId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'OTP generated successfully',
+    data,
+  });
+});
+
+const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
+  const { rideId, otp } = req.body;
+
+  // Validate input
+  if (!rideId || otp === undefined || otp === '') {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID and OTP are required');
+  }
+
+  // Convert otp to string (don't convert to number)
+  const enteredOtp = otp.toString();
+
+  const ride = await RideBookingService.completeRideWithOtp(rideId, enteredOtp);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Ride completed successfully',
+    data: ride,
+  });
+});
+
 export const RideBookingController = {
   createRideBooking,
   cancelRide,
   continueRide,
+  requestCloseRide,
+  completeRideWithOtp,
 };
