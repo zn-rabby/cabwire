@@ -1,5 +1,10 @@
 import { Schema, model } from 'mongoose';
 import { IRideBooking } from './booking.interface';
+export const locationSchema = {
+  lat: { type: Number, required: true },
+  lng: { type: Number, required: true },
+  address: { type: String },
+};
 
 const rideBookingSchema = new Schema<IRideBooking>(
   {
@@ -8,6 +13,7 @@ const rideBookingSchema = new Schema<IRideBooking>(
       ref: 'Cabwire',
       required: true,
     },
+
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -24,8 +30,9 @@ const rideBookingSchema = new Schema<IRideBooking>(
     },
     fare: {
       type: Number,
-      required: true,
+      required: false,
     },
+    distance: { type: Number, required: false },
     startTime: {
       type: Date,
     },
@@ -36,6 +43,8 @@ const rideBookingSchema = new Schema<IRideBooking>(
       type: String,
       select: false,
     },
+    pickupLocation: locationSchema,
+    dropoffLocation: locationSchema,
     paymentMethod: {
       type: String,
       enum: ['stripe', 'offline'],

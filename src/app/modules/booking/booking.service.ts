@@ -2,10 +2,10 @@ import { Types } from 'mongoose';
 import { IRideBooking } from './booking.interface';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
-import { Ride } from '../ride/ride.model';
 import { RideBooking } from './booking.model';
 import { CabwireModel } from '../cabwire/cabwire.model';
 import { ICabwire } from '../cabwire/cabwire.interface';
+import { calculateDistance } from '../../../util/calculateDistance';
 
 const createRideBookingToDB = async (
   payload: Partial<IRideBooking>,
@@ -24,40 +24,48 @@ const createRideBookingToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, 'seatsBooked must be > 0');
   }
 
-  // 🔍 Find Ride by rideId
+  // 🔍 Find Ride
   const ride = await CabwireModel.findById(payload.rideId);
   if (!ride) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Associated ride not found');
   }
 
-  // ✅ Validate ride data
-  if (!ride.distance || ride.distance <= 0 || !ride.fare) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid ride data required');
+  // ✅ Validate essential ride fields
+  if (
+    !ride.perKM ||
+    !ride.pickupLocation ||
+    !ride.dropoffLocation ||
+    !ride.setAvailable
+  ) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Incomplete ride data');
   }
 
-  // 🧮 Check available seats
-  const availableSeats = ride.setAvailable || 0;
+  // 📏 Calculate distance
+  const distance = calculateDistance(ride.pickupLocation, ride.dropoffLocation);
 
+  // 💵 Final Fare = distance × perKM × seatsBooked
+  const fare = Math.round(distance * ride.perKM * payload.seatsBooked);
+
+  // 🪑 Check seat availability
+  const availableSeats = ride.setAvailable;
   if (payload.seatsBooked > availableSeats) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      `Not enough seats available. Only ${availableSeats} seat(s) left.`
+      `Only ${availableSeats} seat(s) available`
     );
   }
 
-  // 💵 Calculate fare (Optional: based on seat if fare is per person)
-  const fare = ride.fare;
-
-  // 🎯 Prepare Booking Payload
+  // 🎯 Prepare booking data
   const bookingPayload: Partial<IRideBooking> = {
     ...payload,
     fare,
+    distance,
     driverId: driverObjectId,
     rideStatus: 'accepted',
     paymentStatus: 'pending',
   };
 
-  // ✅ Create RideBooking
+  // ✅ Create Booking
   const booking = await RideBooking.create(bookingPayload);
   if (!booking) {
     throw new ApiError(
@@ -66,20 +74,19 @@ const createRideBookingToDB = async (
     );
   }
 
-  // 🔄 Update Ride: reduce setAvailable seats & change rideStatus
+  // 🔄 Update ride: reduce seats & set status
   await CabwireModel.findByIdAndUpdate(payload.rideId, {
-    $inc: { setAvailable: -payload.seatsBooked }, // reduce available seats
+    $inc: { setAvailable: -payload.seatsBooked },
     rideStatus: 'accepted',
   });
 
-  // 🔗 Return populated booking with ride info
+  // 🔗 Populate ride and return
   const bookingWithRide = await RideBooking.findById(booking._id).populate(
     'rideId'
   );
 
   return bookingWithRide;
 };
-
 
 const bookRideByUser = async (
   rideId: string,

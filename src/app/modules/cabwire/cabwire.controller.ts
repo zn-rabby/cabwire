@@ -18,76 +18,76 @@ const createRide = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const bookRide = catchAsync(async (req: Request, res: Response) => {
-  const rideId = req.params.rideId;
-  const userId = req.body.userId as string;
+// const bookRide = catchAsync(async (req: Request, res: Response) => {
+//   const rideId = req.params.rideId;
+//   const userId = req.body.userId as string;
 
-  const result = await CabwireService.bookRideByUser(
-    rideId,
-    new Types.ObjectId(userId)
-  );
+//   const result = await CabwireService.bookRideByUser(
+//     rideId,
+//     new Types.ObjectId(userId)
+//   );
 
-  sendResponse(res, {
-    success: true,
-    statusCode: StatusCodes.OK,
-    message: 'Ride booked successfully by user',
-    data: result,
-  });
-});
+//   sendResponse(res, {
+//     success: true,
+//     statusCode: StatusCodes.OK,
+//     message: 'Ride booked successfully by user',
+//     data: result,
+//   });
+// });
 
-const cancelRide = catchAsync(async (req: Request, res: Response) => {
-  const driverId = req.user?.id;
-  const rideId = req.params.id;
+// const cancelRide = catchAsync(async (req: Request, res: Response) => {
+//   const driverId = req.user?.id;
+//   const rideId = req.params.id;
 
-  if (!driverId) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({
-      success: false,
-      message: 'Unauthorized. Please log in.',
-    });
-  }
+//   if (!driverId) {
+//     return res.status(StatusCodes.UNAUTHORIZED).json({
+//       success: false,
+//       message: 'Unauthorized. Please log in.',
+//     });
+//   }
 
-  if (!rideId) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID is required');
-  }
+//   if (!rideId) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID is required');
+//   }
 
-  const ride = await RideService.cancelRide(rideId, driverId);
+//   const ride = await RideService.cancelRide(rideId, driverId);
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'Ride cancelled successfully',
-    data: ride,
-  });
-});
+//   sendResponse(res, {
+//     statusCode: StatusCodes.OK,
+//     success: true,
+//     message: 'Ride cancelled successfully',
+//     data: ride,
+//   });
+// });
 
-const continueRide = catchAsync(async (req: Request, res: Response) => {
-  const driverId = req.user?.id;
-  const rideId = req.params.id;
+// const continueRide = catchAsync(async (req: Request, res: Response) => {
+//   const driverId = req.user?.id;
+//   const rideId = req.params.id;
 
-  if (!driverId) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({
-      success: false,
-      message: 'Unauthorized. Please log in.',
-    });
-  }
+//   if (!driverId) {
+//     return res.status(StatusCodes.UNAUTHORIZED).json({
+//       success: false,
+//       message: 'Unauthorized. Please log in.',
+//     });
+//   }
 
-  if (!rideId) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID is required');
-  }
+//   if (!rideId) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID is required');
+//   }
 
-  const ride = await RideService.continueRide(rideId, driverId);
+//   const ride = await RideService.continueRide(rideId, driverId);
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'Ride continue successfully',
-    data: ride,
-  });
-});
+//   sendResponse(res, {
+//     statusCode: StatusCodes.OK,
+//     success: true,
+//     message: 'Ride continue successfully',
+//     data: ride,
+//   });
+// });
 
 export const CabwireController = {
   createRide,
-  bookRide,
-  cancelRide,
-  continueRide,
+  // bookRide,
+  // cancelRide,
+  // continueRide,
 };

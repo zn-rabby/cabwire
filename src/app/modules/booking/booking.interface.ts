@@ -4,6 +4,7 @@ import {
   PaymentMethod,
   PaymentStatus,
 } from '../ride/ride.interface';
+import { ILocation } from '../notification/notification.interface';
 
 export interface IRideBooking extends Document {
   rideId: Types.ObjectId;
@@ -11,12 +12,17 @@ export interface IRideBooking extends Document {
   driverId?: Types.ObjectId;
 
   seatsBooked: number;
-  fare: number;
+  fare?: number;
 
   startTime?: Date;
   endTime?: Date;
 
   otp?: string;
+
+  distance?: number;
+
+  pickupLocation: ILocation;
+  dropoffLocation: ILocation;
 
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
