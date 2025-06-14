@@ -92,7 +92,7 @@ import { createLogger } from 'winston';
 // };
 
 // find nearest riders
-const findNearestOnlineRiders = async (location: {
+export const findNearestOnlineRiders = async (location: {
   coordinates: [number, number];
 }) => {
   if (

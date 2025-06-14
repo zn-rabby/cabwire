@@ -4,59 +4,43 @@ import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
 import { Types } from 'mongoose';
 import { findNearestOnlineRiders } from '../ride/ride.service';
-
-// Distance formula
-const getDistanceFromLatLonInKm = (
-  pickup: { lat: number; lng: number },
-  dropoff: { lat: number; lng: number }
-): number => {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-
-  const R = 6371; // Radius of Earth in km
-  const dLat = toRad(dropoff.lat - pickup.lat);
-  const dLon = toRad(dropoff.lng - pickup.lng);
-
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(pickup.lat)) *
-      Math.cos(toRad(dropoff.lat)) *
-      Math.sin(dLon / 2) ** 2;
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
-// Simple fare calculation based on distance only
-const calculateDistanceBasedFare = (distance: number): number => {
-  const baseFare = 50; // Flat base fare
-  const ratePerKm = 20; // Per km rate
-  return Math.round(baseFare + distance * ratePerKm);
-};
+import { sendNotifications } from '../../../util/notificaton';
+import {
+  calculateDistanceBasedFare,
+  getDistanceFromLatLonInKm,
+} from '../../../util/calculateDistance';
 
 const createPackageToDB = async (
   payload: Partial<IPackage>,
   userId: Types.ObjectId
-) => {
-  const { pickupLocation, dropoffLocation } = payload;
+): Promise<IPackage> => {
+  const pickup = payload.pickupLocation;
+  const dropoff = payload.dropoffLocation;
 
-  if (
-    !pickupLocation?.lat ||
-    !pickupLocation?.lng ||
-    !dropoffLocation?.lat ||
-    !dropoffLocation?.lng
-  ) {
+  // ✅ Validate location
+  if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Pickup and dropoff coordinates are required.'
     );
   }
 
-  // Calculate distance
-  const distance = getDistanceFromLatLonInKm(pickupLocation, dropoffLocation);
+  // 📏 Calculate distance (in km)
+  const distance = getDistanceFromLatLonInKm(pickup, dropoff);
 
-  // Calculate fare using your fare function
-  const fare = calculateDistanceBasedFare(distance);
+  // 💰 Calculate fare based on distance
+  let fare: number;
+  try {
+    fare = calculateDistanceBasedFare(distance);
+  } catch (error) {
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Failed to calculate fare: ' +
+        (error instanceof Error ? error.message : '')
+    );
+  }
 
+  // 🧱 Build and save the package
   const packageData: Partial<IPackage> = {
     ...payload,
     userId,
@@ -75,25 +59,33 @@ const createPackageToDB = async (
     );
   }
 
-  // Find nearest drivers within 5 km of pickup location
+  // 📍 Find nearest online drivers within 5km
   const nearestDrivers = await findNearestOnlineRiders({
-    lat: pickupLocation.lat,
-    lng: pickupLocation.lng,
+    coordinates: [pickup.lng, pickup.lat], // Consistent with ride system
   });
 
-  // Get socket.io
-  const io = global.io;
+  if (!nearestDrivers.length) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      'No available drivers near your pickup location.'
+    );
+  }
 
-  if (io && createdPackage?._id) {
+  // 🔔 Send socket notifications to each driver
+  const io = global.io;
+  if (createdPackage._id && io) {
     nearestDrivers.forEach(driver => {
-      io.emit('package-requested::', {
+      sendNotifications({
+        text: 'New package delivery request available',
         packageId: createdPackage._id,
         userId: createdPackage.userId,
+        receiver: driver._id, // socket room: driver-specific
         pickupLocation: createdPackage.pickupLocation,
         dropoffLocation: createdPackage.dropoffLocation,
         status: createdPackage.packageStatus,
         fare: createdPackage.fare,
         distance: createdPackage.distance,
+        event: 'package-requested', // custom event name
       });
     });
   }
