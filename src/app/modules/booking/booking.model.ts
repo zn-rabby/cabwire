@@ -5,7 +5,7 @@ const rideBookingSchema = new Schema<IRideBooking>(
   {
     rideId: {
       type: Schema.Types.ObjectId,
-      ref: 'Ride',
+      ref: 'Cabwire',
       required: true,
     },
     userId: {

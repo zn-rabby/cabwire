@@ -6,48 +6,62 @@ import { Ride } from '../ride/ride.model';
 import { RideBooking } from './booking.model';
 import { CabwireModel } from '../cabwire/cabwire.model';
 import { ICabwire } from '../cabwire/cabwire.interface';
-// import { Service } from '../service/service.model'; // assuming service.model exists
 
 const createRideBookingToDB = async (
   payload: Partial<IRideBooking>,
   driverObjectId: Types.ObjectId
 ) => {
+  // ✅ Validate input
   if (!payload.rideId) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'rideId is required');
   }
 
-  // 🔍 Find ride
-  const ride = await Ride.findById(payload.rideId);
+  if (!payload.paymentMethod) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'paymentMethod is required');
+  }
+
+  if (!payload.seatsBooked || payload.seatsBooked <= 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'seatsBooked must be > 0');
+  }
+
+  // 🔍 Find Ride
+  const ride = await CabwireModel.findById(payload.rideId);
+  console.log(ride);
   if (!ride) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Associated ride not found');
   }
 
-  if (!ride.distance || ride.distance <= 0) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Valid distance in ride is required'
-    );
+  if (!ride.distance || ride.distance <= 0 || !ride.fare) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid ride data required');
   }
-  let fare = ride.fare;
 
-  payload.fare = fare;
-  payload.driverId = driverObjectId;
+  // 💵 Set Fare
+  const fare = ride.fare;
 
-  // ⬇️ Create booking
-  const booking = await RideBooking.create(payload);
+  // 🎯 Prepare Booking
+  const bookingPayload: Partial<IRideBooking> = {
+    ...payload,
+    fare,
+    driverId: driverObjectId,
+    rideStatus: 'accepted',
+    paymentStatus: 'pending', // Default
+  };
+
+  // ✅ Create Booking
+  const booking = await RideBooking.create(bookingPayload);
   if (!booking) {
     throw new ApiError(
       StatusCodes.INTERNAL_SERVER_ERROR,
-      'Failed to create ride booking'
+      'Booking creation failed'
     );
   }
 
-  // 🔁 Update ride status
+  // 🔄 Update Ride status
   await Ride.findByIdAndUpdate(payload.rideId, {
     rideStatus: 'accepted',
   });
 
-  // 🔗 Populate rideId
+  // 🔗 Return populated booking
   const bookingWithRide = await RideBooking.findById(booking._id).populate(
     'rideId'
   );

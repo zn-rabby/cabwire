@@ -6,30 +6,28 @@ import { StatusCodes } from 'http-status-codes';
 import mongoose, { Types } from 'mongoose';
 import ApiError from '../../../errors/ApiError';
 
-export const createRideBooking = catchAsync(
-  async (req: Request, res: Response) => {
-    const driverId = req.user?.id;
+const createRideBooking = catchAsync(async (req: Request, res: Response) => {
+  const driverId = req.user?.id;
 
-    if (!driverId) {
-      throw new ApiError(
-        StatusCodes.UNAUTHORIZED,
-        'Unauthorized. Please log in.'
-      );
-    }
-
-    const result = await RideBookingService.createRideBookingToDB(
-      req.body,
-      new mongoose.Types.ObjectId(driverId)
+  if (!driverId) {
+    throw new ApiError(
+      StatusCodes.UNAUTHORIZED,
+      'Unauthorized. Please log in.'
     );
-
-    sendResponse(res, {
-      statusCode: 201,
-      success: true,
-      message: 'Ride booking created successfully',
-      data: result,
-    });
   }
-);
+
+  const result = await RideBookingService.createRideBookingToDB(
+    req.body,
+    new mongoose.Types.ObjectId(driverId)
+  );
+
+  sendResponse(res, {
+    statusCode: 201,
+    success: true,
+    message: 'Ride booking created successfully',
+    data: result,
+  });
+});
 
 const bookRide = catchAsync(async (req: Request, res: Response) => {
   const rideId = req.params.rideId;

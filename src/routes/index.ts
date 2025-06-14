@@ -44,6 +44,10 @@ const apiRoutes = [
     route: CabwireRoutes,
   },
   {
+    path: '/cabwire-booking',
+    route: BookingRoutes,
+  },
+  {
     path: '/banner',
     route: BannerRoutes,
   },
