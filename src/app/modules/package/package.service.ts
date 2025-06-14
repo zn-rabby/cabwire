@@ -72,7 +72,7 @@ const createPackageToDB = async (
   }
 
   // 🔔 Send socket notifications to each driver
-  const io = global.io;
+
   if (createdPackage._id && io) {
     nearestDrivers.forEach(driver => {
       sendNotifications({
@@ -115,6 +115,18 @@ const acceptPackageByDriver = async (
   existing.acceptedAt = new Date();
 
   await existing.save();
+  sendNotifications({
+    text: '📦 Your package delivery has been accepted by a driver!',
+    packageId: existing._id,
+    userId: existing.userId,
+    receiver: existing.userId?.toString(), // socket room/user ID
+    pickupLocation: existing.pickupLocation,
+    dropoffLocation: existing.dropoffLocation,
+    status: existing.packageStatus,
+    fare: existing.fare,
+    distance: existing.distance,
+    event: 'package-accepted', // custom event for frontend
+  });
   return existing;
 };
 
