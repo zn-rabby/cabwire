@@ -6,6 +6,7 @@ import { RideBooking } from './booking.model';
 import { CabwireModel } from '../cabwire/cabwire.model';
 import { ICabwire } from '../cabwire/cabwire.interface';
 import { calculateDistance } from '../../../util/calculateDistance';
+import { sendNotifications } from '../../../util/notificaton';
 
 const createRideBookingToDB = async (
   payload: Partial<IRideBooking>,
@@ -85,6 +86,19 @@ const createRideBookingToDB = async (
     'rideId'
   );
 
+  // 📡 Send Notification via Socket
+  sendNotifications({
+    text: 'New ride booking accepted!',
+    rideId: ride._id,
+    userId: driverObjectId, // This booking is linked to this driver
+    receiver: driverObjectId.toString(), // For socket emit
+    pickupLocation: ride.pickupLocation,
+    dropoffLocation: ride.dropoffLocation,
+    status: 'accepted',
+    fare,
+    distance,
+    duration: ride.duration,
+  });
   return bookingWithRide;
 };
 
