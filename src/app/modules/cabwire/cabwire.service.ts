@@ -23,7 +23,7 @@ const bookRideByUser = async (
   }
 
   // Update ride status to accepted
-  ride.rideStatus = 'accepted';
+  ride.rideStatus = 'book';
   await ride.save();
 
   return ride;

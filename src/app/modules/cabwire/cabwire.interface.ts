@@ -2,7 +2,7 @@ import { Document, Types } from 'mongoose';
 
 export type RideStatus =
   | 'requested'
-  | 'accepted'
+  | 'book'
   | 'continue'
   | 'clouse'
   | 'cancelled'

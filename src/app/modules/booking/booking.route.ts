@@ -1,7 +1,5 @@
 import express from 'express';
-import {
-  createRideBooking,
-} from './booking.controller';
+import { createRideBooking, RideBookingController } from './booking.controller';
 import auth from '../../middlewares/auth';
 import { USER_ROLES } from '../../../enums/user';
 
@@ -12,7 +10,26 @@ router.post(
   auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   createRideBooking
 );
-// router.get('/', getAllRideBookings);
-// router.get('/:id', getSingleRideBooking);
+router.patch(
+  '/accept-cabwire/:rideId',
+  auth(
+    USER_ROLES.USER,
+    USER_ROLES.DRIVER,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  RideBookingController.bookRide
+);
+router.patch(
+  '/cancel-cabwire/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
+  RideBookingController.cancelRide
+);
+
+router.patch(
+  '/continue-cabwire/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
+  RideBookingController.continueRide
+);
 
 export const BookingRoutes = router;
