@@ -158,6 +158,19 @@ const markPackageAsDelivered = async (
   pkg.deliveredAt = new Date();
 
   await pkg.save();
+
+  // 🔔 Send real-time socket notification to the user
+  sendNotifications({
+    text: '✅ Your package has been successfully delivered!',
+    packageId: pkg._id,
+    userId: pkg.userId,
+    receiver: pkg.userId?.toString(), // Socket room or user ID
+    pickupLocation: pkg.pickupLocation,
+    dropoffLocation: pkg.dropoffLocation,
+    status: pkg.packageStatus,
+    event: 'package-delivered', // Custom frontend socket event
+  });
+
   return pkg;
 };
 
