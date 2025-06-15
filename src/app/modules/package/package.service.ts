@@ -9,6 +9,7 @@ import {
   calculateDistanceBasedFare,
   getDistanceFromLatLonInKm,
 } from '../../../util/calculateDistance';
+import generateOTP from '../../../util/generateOTP';
 
 const createPackageToDB = async (
   payload: Partial<IPackage>,
@@ -173,9 +174,123 @@ const markPackageAsDelivered = async (
 
   return pkg;
 };
+// request colose ride
+const requestClosePackage = async (rideId: string, driverId: string) => {
+  const ride = await PackageModel.findById(rideId);
+
+  if (!ride || ride.packageStatus !== 'requested') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid ride or ride not in progress'
+    );
+  }
+
+  const otp = generateOTP();
+
+  // Save as string and mark as modified
+  ride.otp = otp.toString();
+  ride.markModified('otp'); // Explicitly mark the field as modified
+  await ride.save();
+
+  console.log(
+    'Generated OTP for ride:',
+    ride._id,
+    'OTP:',
+    ride.otp,
+    'Type:',
+    typeof ride.otp
+  );
+
+  return {
+    rideId: ride._id,
+    otp: ride.otp,
+  };
+};
+
+// complete ride with otp
+const completePackageWithOtp = async (rideId: string, enteredOtp: string) => {
+  console.log('Verifying OTP for ride:', rideId, 'with OTP:', enteredOtp);
+
+  // First check if ride exists and get current OTP
+  const ride = await PackageModel.findById(rideId).select('+otp'); // Explicitly include otp
+
+  if (!ride) {
+    console.log('Ride not found');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not found');
+  }
+
+  console.log('Ride details:', {
+    rideId: ride._id,
+    status: ride.packageStatus,
+    storedOtp: ride.otp,
+    otpType: typeof ride.otp,
+    enteredOtp,
+    enteredOtpType: typeof enteredOtp,
+  });
+
+  if (ride.packageStatus !== 'accepted') {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not in progress');
+  }
+
+  if (!ride.otp || ride.otp.toString().trim() === '') {
+    console.error('OTP missing in ride document');
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'No OTP generated for this ride'
+    );
+  }
+
+  // Compare as strings
+  if (ride.otp.toString() !== enteredOtp.toString()) {
+    console.log('OTP mismatch:', {
+      stored: ride.otp,
+      entered: enteredOtp,
+      storedType: typeof ride.otp,
+      enteredType: typeof enteredOtp,
+    });
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
+  }
+
+  // Use atomic update
+  const updatedRide = await PackageModel.findOneAndUpdate(
+    {
+      _id: rideId,
+      otp: ride.otp, // Ensure OTP hasn't changed
+      rideStatus: 'delivered',
+    },
+    {
+      $set: { rideStatus: 'delivered' },
+      $unset: { otp: '' },
+    },
+    { new: true }
+  );
+
+  if (!updatedRide) {
+    console.error('Concurrent modification detected');
+    throw new ApiError(
+      StatusCodes.CONFLICT,
+      'Ride state changed during verification'
+    );
+  }
+
+  // Emit ride-completed event
+  if (updatedRide._id) {
+    sendNotifications({
+      // event: 'ride-completed',
+      rideId: updatedRide._id,
+      receiver: updatedRide._id,
+      text: 'Ride completed successfully',
+    });
+  }
+
+  console.log('Ride completed successfully:', updatedRide._id);
+  return updatedRide;
+};
 
 export const PackageService = {
   createPackageToDB,
   acceptPackageByDriver,
   markPackageAsDelivered,
+  requestClosePackage,
+  completePackageWithOtp,
 };
