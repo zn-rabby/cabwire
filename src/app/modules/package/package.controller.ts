@@ -4,6 +4,7 @@ import sendResponse from '../../../shared/sendResponse';
 import { StatusCodes } from 'http-status-codes';
 import mongoose from 'mongoose';
 import { PackageService } from './package.service';
+import ApiError from '../../../errors/ApiError';
 
 const createPackage = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
@@ -75,9 +76,49 @@ const markAsDelivered = catchAsync(async (req: Request, res: Response) => {
     data: updated,
   });
 });
+const requestCloseRide = catchAsync(async (req: Request, res: Response) => {
+  const driverId = req.user?.id;
+  const rideId = req.params.id;
+
+  if (!driverId) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+
+  const data = await PackageService.requestClosePackage(rideId, driverId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'OTP generated successfully',
+    data,
+  });
+});
+
+const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
+  const { rideId, otp } = req.body;
+
+  // Validate input
+  if (!rideId || otp === undefined || otp === '') {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID and OTP are required');
+  }
+
+  // Convert otp to string (don't convert to number)
+  const enteredOtp = otp.toString();
+
+  const ride = await PackageService.completePackageWithOtp(rideId, enteredOtp);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Package delivered successfully',
+    data: ride,
+  });
+});
 
 export const PackageController = {
   createPackage,
   acceptPackage,
   markAsDelivered,
+  requestCloseRide,
+  completeRideWithOtp,
 };
