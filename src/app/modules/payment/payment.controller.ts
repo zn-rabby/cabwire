@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { createOrGetStripeAccount, createStripeOnboardingLink, PaymentService } from './payment.service';
+import {
+  createOrGetStripeAccount,
+  createStripeOnboardingLink,
+  PaymentService,
+} from './payment.service';
 import catchAsync from '../../../shared/catchAsync';
+import { StatusCodes } from 'http-status-codes';
+import sendResponse from '../../../shared/sendResponse';
 
 const createPayment = async (
   req: Request,
@@ -19,6 +25,16 @@ const createPayment = async (
   }
 };
 
+const getAllPayments = catchAsync(async (req: Request, res: Response) => {
+  const payments = await PaymentService.getAllPayments();
+  res.status(200).json({
+    statusCode: 200,
+    success: true,
+    message: 'All payments retrieved successfully',
+    data: payments,
+  });
+});
+
 export const createConnectLink = async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
@@ -33,14 +49,21 @@ export const createConnectLink = async (req: Request, res: Response) => {
   }
 };
 
-const getAllPayments = catchAsync(async (req: Request, res: Response) => {
-  const payments = await PaymentService.getAllPayments();
-  res.status(200).json({
-    statusCode: 200,
-    success: true,
-    message: 'All payments retrieved successfully',
-    data: payments,
-  });
-});
+const createAccountToStripe = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await PaymentService.createAccountToStripe(req.user);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Connected account created successfully',
+      data: result,
+    });
+  }
+);
 
-export const PaymentController = { createPayment, getAllPayments };
+export const PaymentController = {
+  createPayment,
+  getAllPayments,
+  createConnectLink,
+  createAccountToStripe,
+};

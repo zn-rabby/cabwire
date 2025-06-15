@@ -10,5 +10,15 @@ router.get('/', PaymentController.getAllPayments);
 
 // connect stripe account
 router.post('/create-connect-link', auth(USER_ROLES.DRIVER), createConnectLink);
+router.post(
+  '/create-account',
+  auth(
+    USER_ROLES.USER,
+    USER_ROLES.DRIVER,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  PaymentController.createAccountToStripe
+);
 
 export const PaymentRoutes = router;
