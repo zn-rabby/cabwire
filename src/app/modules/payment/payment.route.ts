@@ -21,4 +21,15 @@ router.post(
   PaymentController.createAccountToStripe
 );
 
+router.post(
+  '/transfer-to-driver',
+  auth(
+    USER_ROLES.USER,
+    USER_ROLES.DRIVER,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  PaymentController.transferToDriver
+);
+
 export const PaymentRoutes = router;

@@ -61,9 +61,19 @@ const createAccountToStripe = catchAsync(
   }
 );
 
+const transferToDriver = catchAsync(async (req: Request, res: Response) => {
+  const result = await PaymentService.transferToDriver(req.body);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Amount transferred to driver successfully',
+    data: result,
+  });
+});
 export const PaymentController = {
   createPayment,
   getAllPayments,
   createConnectLink,
   createAccountToStripe,
+  transferToDriver,
 };

@@ -5,7 +5,6 @@ import { StatusCodes } from 'http-status-codes';
 import { isValidObjectId } from 'mongoose';
 import Stripe from 'stripe';
 import config from '../../../config';
-import { RideBooking } from '../booking/booking.model';
 import { Ride } from '../ride/ride.model';
 import { User } from '../user/user.model';
 import { JwtPayload } from 'jsonwebtoken';
@@ -214,8 +213,33 @@ const createAccountToStripe = async (user: JwtPayload) => {
   return accountLink?.url; // Return the onboarding link
 };
 
+const transferToDriver = async (payload: {
+  driverId: string;
+  amount: number;
+}) => {
+  const { driverId, amount } = payload;
+
+  const driver = await User.findById(driverId);
+  if (!driver || !driver.stripeAccountId) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Driver or Stripe account not found'
+    );
+  }
+
+  const transfer = await stripe.transfers.create({
+    amount: Math.round(amount * 100),
+    currency: 'usd',
+    destination: driver.stripeAccountId,
+    transfer_group: `group_driver_${driverId}`,
+  });
+
+  return transfer;
+};
+
 export const PaymentService = {
   createPayment,
   getAllPayments,
   createAccountToStripe,
+  transferToDriver,
 };
