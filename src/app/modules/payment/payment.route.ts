@@ -5,7 +5,7 @@ import auth from '../../middlewares/auth';
 
 const router = Router();
 
-router.post('/', PaymentController.createPayment);
+router.post('/ride-payment', PaymentController.createRidePayment);
 router.get('/', PaymentController.getAllPayments);
 
 // connect stripe account

@@ -8,13 +8,13 @@ import catchAsync from '../../../shared/catchAsync';
 import { StatusCodes } from 'http-status-codes';
 import sendResponse from '../../../shared/sendResponse';
 
-const createPayment = async (
+const createRidePayment = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const payment = await PaymentService.createPayment(req.body);
+    const payment = await PaymentService.createRidePayment(req.body);
     res.status(201).json({
       success: true,
       message: 'Payment created successfully',
@@ -71,7 +71,7 @@ const transferToDriver = catchAsync(async (req: Request, res: Response) => {
   });
 });
 export const PaymentController = {
-  createPayment,
+  createRidePayment,
   getAllPayments,
   createConnectLink,
   createAccountToStripe,

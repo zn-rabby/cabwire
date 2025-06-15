@@ -39,7 +39,7 @@ export async function createOrGetStripeAccount(
   return account.id;
 }
 
-const createPayment = async (payload: Partial<IPayment>) => {
+const createRidePayment = async (payload: Partial<IPayment>) => {
   // 1️⃣ Validate required IDs
   if (!payload.rideId || !isValidObjectId(payload.rideId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid rideId is required');
@@ -238,7 +238,7 @@ const transferToDriver = async (payload: {
 };
 
 export const PaymentService = {
-  createPayment,
+  createRidePayment,
   getAllPayments,
   createAccountToStripe,
   transferToDriver,
