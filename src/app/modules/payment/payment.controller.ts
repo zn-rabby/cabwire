@@ -43,6 +43,23 @@ const createCabwireOrBookingPayment = async (
     next(error);
   }
 };
+// payment.controller.ts
+const createPackagePayment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const payment = await PaymentService.createPackagePayment(req.body);
+    res.status(201).json({
+      success: true,
+      message: 'Package payment created successfully',
+      data: payment,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const getAllPayments = catchAsync(async (req: Request, res: Response) => {
   const payments = await PaymentService.getAllPayments();
@@ -92,6 +109,7 @@ const transferToDriver = catchAsync(async (req: Request, res: Response) => {
 export const PaymentController = {
   createRidePayment,
   createCabwireOrBookingPayment,
+  createPackagePayment,
   getAllPayments,
   createConnectLink,
   createAccountToStripe,

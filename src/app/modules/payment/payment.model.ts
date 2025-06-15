@@ -3,7 +3,7 @@ import { IPayment } from './payment.interface';
 
 const paymentSchema = new Schema<IPayment>(
   {
-    rideId: { type: Schema.Types.ObjectId, ref: 'Ride', required: true },
+    rideId: { type: Schema.Types.ObjectId, ref: 'Ride', required: false },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     // bookingId: {
     //   type: Schema.Types.ObjectId,
