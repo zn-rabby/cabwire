@@ -3,9 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import { Types } from 'mongoose';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
-import { CabwireService } from './cabwire.service';
-import ApiError from '../../../errors/ApiError';
-import { RideService } from '../ride/ride.service';
+import { CabwireService } from './cabwire.service'; 
 
 const createRide = catchAsync(async (req: Request, res: Response) => {
   const result = await CabwireService.createRideByDriver(req.body);
