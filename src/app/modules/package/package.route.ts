@@ -27,4 +27,21 @@ router.patch(
   PackageController.markAsDelivered
 );
 
+router.patch(
+  '/request-close-package/:id',
+  auth(
+    USER_ROLES.ADMIN,
+    USER_ROLES.DRIVER,
+    USER_ROLES.USER,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  PackageController.requestClosePackage
+);
+
+router.post(
+  '/verify-package-otp/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.DRIVER, USER_ROLES.USER),
+  PackageController.completePackageeWithOtp
+);
+
 export const PackageRoutes = router;

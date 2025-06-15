@@ -76,7 +76,7 @@ const markAsDelivered = catchAsync(async (req: Request, res: Response) => {
     data: updated,
   });
 });
-const requestCloseRide = catchAsync(async (req: Request, res: Response) => {
+const requestClosePackage = catchAsync(async (req: Request, res: Response) => {
   const driverId = req.user?.id;
   const rideId = req.params.id;
 
@@ -94,7 +94,7 @@ const requestCloseRide = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
+const completePackageeWithOtp = catchAsync(async (req: Request, res: Response) => {
   const { rideId, otp } = req.body;
 
   // Validate input
@@ -119,6 +119,6 @@ export const PackageController = {
   createPackage,
   acceptPackage,
   markAsDelivered,
-  requestCloseRide,
-  completeRideWithOtp,
+  requestClosePackage,
+  completePackageeWithOtp,
 };

@@ -228,7 +228,7 @@ const completePackageWithOtp = async (rideId: string, enteredOtp: string) => {
     enteredOtpType: typeof enteredOtp,
   });
 
-  if (ride.packageStatus !== 'accepted') {
+  if (ride.packageStatus !== 'requested') {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not in progress');
   }
 
@@ -251,16 +251,16 @@ const completePackageWithOtp = async (rideId: string, enteredOtp: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
   }
 
-  // Use atomic update
+  // Use atomic update - fixed the condition
   const updatedRide = await PackageModel.findOneAndUpdate(
     {
       _id: rideId,
       otp: ride.otp, // Ensure OTP hasn't changed
-      rideStatus: 'delivered',
+      packageStatus: 'requested', // ✅ FIXED: correct current state
     },
     {
-      $set: { rideStatus: 'delivered' },
-      $unset: { otp: '' },
+      $set: { packageStatus: 'delivered' }, // ✅ Mark as delivered
+      $unset: { otp: '' }, // ✅ Remove OTP after use
     },
     { new: true }
   );
@@ -276,7 +276,6 @@ const completePackageWithOtp = async (rideId: string, enteredOtp: string) => {
   // Emit ride-completed event
   if (updatedRide._id) {
     sendNotifications({
-      // event: 'ride-completed',
       rideId: updatedRide._id,
       receiver: updatedRide._id,
       text: 'Ride completed successfully',
