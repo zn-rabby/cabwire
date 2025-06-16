@@ -66,11 +66,19 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
     message: 'Your password has been successfully changed.',
     data: {},
   });
-  // sendResponse(res, {
-  //   success: true,
-  //   statusCode: StatusCodes.OK,
-  //   message: 'Your password has been successfully changed',
-  // });
+});
+
+// refresh token
+const resendOtp = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  await AuthService.resendOtpFromDb(email);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Your password has been successfully changed.',
+    data: {},
+  });
 });
 
 export const AuthController = {
@@ -79,4 +87,5 @@ export const AuthController = {
   forgetPassword,
   resetPassword,
   changePassword,
+  resendOtp,
 };
