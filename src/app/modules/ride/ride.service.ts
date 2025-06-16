@@ -2,7 +2,7 @@ import { IRide } from './ride.interface';
 import { Ride } from './ride.model';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
-import { isValidObjectId, Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { Category } from '../category/category.model';
 import { Service } from '../service/service.model';
 import { calculateFare } from './ride.utils';
@@ -10,8 +10,6 @@ import { User } from '../user/user.model';
 import generateOTP from '../../../util/generateOTP';
 import { calculateDistance } from '../../../util/calculateDistance';
 import { sendNotifications } from '../../../util/notificaton';
-
-// import { OnlineDriverStore } from '../../../util/OnlineDriverStore';
 
 // find nearest riders
 export const findNearestOnlineRiders = async (location: {

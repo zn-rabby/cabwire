@@ -71,6 +71,18 @@ const getAllPayments = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllPaymentsWithDriver = catchAsync(
+  async (req: Request, res: Response) => {
+    const payments = await PaymentService.getAllPaymentsWithDriver();
+    res.status(200).json({
+      statusCode: 200,
+      success: true,
+      message: 'Driver earnings retrieved successfully',
+      data: payments,
+    });
+  }
+);
+
 export const createConnectLink = async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
@@ -111,6 +123,7 @@ export const PaymentController = {
   createCabwireOrBookingPayment,
   createPackagePayment,
   getAllPayments,
+  getAllPaymentsWithDriver,
   createConnectLink,
   createAccountToStripe,
   transferToDriver,

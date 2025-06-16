@@ -298,7 +298,6 @@ const createPackagePayment = async (payload: {
   };
 };
 
-
 // Generate Stripe onboarding link
 export async function createStripeOnboardingLink(
   stripeAccountId: string
@@ -319,6 +318,38 @@ export async function createStripeOnboardingLink(
 const getAllPayments = async () => {
   const payments = await stripe.balanceTransactions.list(); // optional: latest first
   return payments;
+};
+
+const getAllPaymentsWithDriver = async () => {
+  // Step 1: Get all drivers with stripeAccountId
+  const drivers = await User.find({
+    role: 'DRIVER',
+    stripeAccountId: { $exists: true },
+  });
+
+  const earnings = [];
+
+  for (const driver of drivers) {
+    // Step 2: Fetch balance transactions for each driver
+    const transactions = await stripe.balanceTransactions.list(
+      { limit: 100 }, // ✅ first param: filter options
+      { stripeAccount: driver.stripeAccountId } // ✅ second param: request options
+    );
+
+    // Step 3: Sum the amounts
+    const totalEarning = transactions.data.reduce((sum, tx) => {
+      return sum + tx.amount; // amount is in cents
+    }, 0);
+
+    earnings.push({
+      driverId: driver._id,
+      name: driver.name,
+      totalEarning: totalEarning / 100, // convert cents to dollar/taka
+      currency: transactions.data[0]?.currency || 'usd',
+    });
+  }
+
+  return earnings;
 };
 
 const createAccountToStripe = async (user: JwtPayload) => {
@@ -410,6 +441,7 @@ export const PaymentService = {
   createCabwireOrBookingPayment,
   createPackagePayment,
   getAllPayments,
+  getAllPaymentsWithDriver,
   createAccountToStripe,
   transferToDriver,
 };

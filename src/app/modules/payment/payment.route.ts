@@ -14,6 +14,16 @@ router.post(
 router.post('/package-payment', PaymentController.createPackagePayment);
 
 router.get('/', PaymentController.getAllPayments);
+router.get(
+  '/driver',
+  auth(
+    USER_ROLES.USER,
+    USER_ROLES.DRIVER,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  PaymentController.getAllPaymentsWithDriver
+);
 
 // connect stripe account
 router.post('/create-connect-link', auth(USER_ROLES.DRIVER), createConnectLink);
