@@ -97,6 +97,28 @@ const getAllPaymentsByUserId = catchAsync(
   }
 );
 
+export const withdrawToStripe = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.params.userId;
+    const { amount } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Please provide a valid withdrawal amount',
+      });
+    }
+
+    const data = await PaymentService.transferToStripeAccount(userId, amount);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: data.message,
+      data: data.transfer,
+    });
+  }
+);
+
 export const createConnectLink = async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
@@ -142,4 +164,5 @@ export const PaymentController = {
   createConnectLink,
   createAccountToStripe,
   transferToDriver,
+  withdrawToStripe,
 };

@@ -14,7 +14,34 @@ import { PackageModel } from '../package/package.model';
 import mongoose from 'mongoose';
 
 const stripe = new Stripe(config.stripe_secret_key as string);
-// const YOUR_DOMAIN = '10.0.70.163:5005'; // replace in production
+// // const YOUR_DOMAIN = '10.0.70.163:5005'; // replace in production
+
+// export async function createOrGetStripeAccount(
+//   userId: string
+// ): Promise<string> {
+//   const driver = await User.findById(userId);
+
+//   if (!driver) throw new Error('Driver not found');
+
+//   if (driver.role !== 'DRIVER') {
+//     throw new Error('Only drivers can create a Stripe account');
+//   }
+
+//   if (!driver.email) throw new Error('Driver email missing');
+//   console.log(driver, driver.email);
+
+//   if (driver.stripeAccountId) return driver.stripeAccountId;
+
+//   const account = await stripe.accounts.create({
+//     type: 'express',
+//     email: driver.email,
+//   });
+//   console.log(account);
+
+//   await User.findByIdAndUpdate(userId, { stripeAccountId: account.id });
+
+//   return account.id;
+// }
 
 export async function createOrGetStripeAccount(
   userId: string
@@ -35,7 +62,11 @@ export async function createOrGetStripeAccount(
   const account = await stripe.accounts.create({
     type: 'express',
     email: driver.email,
+    capabilities: {
+      transfers: { requested: true }, // ✅ এই লাইনটা যোগ করো
+    },
   });
+
   console.log(account);
 
   await User.findByIdAndUpdate(userId, { stripeAccountId: account.id });
@@ -433,6 +464,69 @@ const getAllPaymentsByUserId = async (id: string) => {
     payments,
   };
 };
+export const transferToStripeAccount = async (
+  userId: string,
+  amount: number
+) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid User ID');
+  }
+  if (amount <= 0) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Amount must be greater than zero'
+    );
+  }
+
+  // ইউজার খুঁজে নাও
+  // const user = await User.findById(userId);
+  const user = await User.findById(userId).select('+stripeAccountId');
+
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+  console.log('User ', user);
+  console.log('User ', user.stripeAccountId);
+
+  if (!user.stripeAccountId) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'User has no Stripe Account connected'
+    );
+  }
+
+  // ইউজারের পেমেন্টস গুলো নিয়ে আসো
+  const { totalDriverAmount, totalAdminAmount } = await getAllPaymentsByUserId(
+    userId
+  );
+  const availableAmount = totalDriverAmount + totalAdminAmount;
+
+  if (amount > availableAmount) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Insufficient balance for withdrawal'
+    );
+  }
+
+  // Stripe payout logic (Direct Transfer to Connected Account)
+  // নিচে `stripe.transfers.create` ইউজারকে টাকা পাঠাবে
+  // amount-টা cents এ দিতে হবে, তাই multiply 100 করলাম
+
+  const transfer = await stripe.transfers.create({
+    amount: Math.round(amount * 100), // cents
+    currency: 'usd', // তোমার currency অনুযায়ী পরিবর্তন করো
+    destination: user.stripeAccountId, // ইউজারের Stripe connected account ID
+    description: `Withdraw payment for user ${userId}`,
+  });
+
+  // এখানে চাইলে Payment অথবা Withdraw collection আপডেট করো
+  // উদাহরণ: withdraw রেকর্ড add করা বা Payment status update
+
+  return {
+    message: 'Amount transferred to Stripe account successfully',
+    transfer,
+  };
+};
 
 const createAccountToStripe = async (user: JwtPayload) => {
   // Check if this user exists
@@ -523,9 +617,11 @@ export const PaymentService = {
   createRidePayment,
   createCabwireOrBookingPayment,
   getAllPaymentsByUserId,
+
   createPackagePayment,
   getAllPayments,
   getAllPaymentsWithDriver,
   createAccountToStripe,
   transferToDriver,
+  transferToStripeAccount,
 };

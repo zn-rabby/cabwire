@@ -25,15 +25,8 @@ router.get(
   PaymentController.getAllPaymentsWithDriver
 );
 
-router.get(
-  '/:userId',
-  auth(),
-  // USER_ROLES.USER,
-  // USER_ROLES.DRIVER,
-  // USER_ROLES.ADMIN,
-  // USER_ROLES.SUPER_ADMIN
-  PaymentController.getAllPaymentsByUserId
-);
+router.get('/:userId', auth(), PaymentController.getAllPaymentsByUserId);
+router.post('/:userId/withdraw', auth(), PaymentController.withdrawToStripe);
 
 // connect stripe account
 router.post('/create-connect-link', auth(USER_ROLES.DRIVER), createConnectLink);

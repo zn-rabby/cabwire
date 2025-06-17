@@ -77,12 +77,14 @@ const userSchema = new Schema<IUser, UserModal>(
       enum: ['active', 'block'],
       default: 'active',
     },
+    stripeAccountId: {
+      type: String,
+    },
     verified: {
       type: Boolean,
       default: false,
     },
-   
-    
+
     driverLicense: { type: driverLicenseSchema },
     driverVehicles: { type: driverVehicleSchema },
     authentication: {
