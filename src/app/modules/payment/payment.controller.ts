@@ -7,6 +7,7 @@ import {
 import catchAsync from '../../../shared/catchAsync';
 import { StatusCodes } from 'http-status-codes';
 import sendResponse from '../../../shared/sendResponse';
+import ApiError from '../../../errors/ApiError';
 
 const createRidePayment = async (
   req: Request,
@@ -82,6 +83,19 @@ const getAllPaymentsWithDriver = catchAsync(
     });
   }
 );
+const getAllPaymentsByUserId = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.params.userId;
+
+    const data = await PaymentService.getAllPaymentsByUserId(userId);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Payments fetched successfully',
+      data,
+    });
+  }
+);
 
 export const createConnectLink = async (req: Request, res: Response) => {
   try {
@@ -121,6 +135,7 @@ const transferToDriver = catchAsync(async (req: Request, res: Response) => {
 export const PaymentController = {
   createRidePayment,
   createCabwireOrBookingPayment,
+  getAllPaymentsByUserId,
   createPackagePayment,
   getAllPayments,
   getAllPaymentsWithDriver,

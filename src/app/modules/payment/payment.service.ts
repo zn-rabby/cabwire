@@ -11,6 +11,7 @@ import { JwtPayload } from 'jsonwebtoken';
 import { CabwireModel } from '../cabwire/cabwire.model';
 import { RideBooking } from '../booking/booking.model';
 import { PackageModel } from '../package/package.model';
+import mongoose from 'mongoose';
 
 const stripe = new Stripe(config.stripe_secret_key as string);
 // const YOUR_DOMAIN = '10.0.70.163:5005'; // replace in production
@@ -358,12 +359,13 @@ export async function createStripeOnboardingLink(
 
   return accountLink.url;
 }
+
 // const getAllPayments = async () => {
-//   const payments = await Payment.find().sort({ createdAt: -1 }); // optional: latest first
+//   const payments = await stripe.balanceTransactions.list(); // optional: latest first
 //   return payments;
 // };
 const getAllPayments = async () => {
-  const payments = await stripe.balanceTransactions.list(); // optional: latest first
+  const payments = await Payment.find().sort({ createdAt: -1 }); // optional: latest first
   return payments;
 };
 
@@ -397,6 +399,39 @@ const getAllPaymentsWithDriver = async () => {
   }
 
   return earnings;
+};
+
+const getAllPaymentsByUserId = async (id: string) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ID');
+  }
+
+  const objectId = new mongoose.Types.ObjectId(id);
+
+  // Find payments where the driverId or adminId matches the provided ID
+  const payments = await Payment.find({
+    $or: [{ driverId: objectId }, { adminId: objectId }],
+  });
+
+  let totalDriverAmount = 0;
+  let totalAdminAmount = 0;
+
+  // Calculate respective amounts
+  payments.forEach((payment: any) => {
+    if (payment.driverId?.toString() === id) {
+      totalDriverAmount += payment.driverAmount || 0;
+    }
+
+    if (payment.adminId?.toString() === id) {
+      totalAdminAmount += payment.adminAmount || 0;
+    }
+  });
+
+  return {
+    totalDriverAmount,
+    totalAdminAmount,
+    payments,
+  };
 };
 
 const createAccountToStripe = async (user: JwtPayload) => {
@@ -487,6 +522,7 @@ const transferToDriver = async (payload: {
 export const PaymentService = {
   createRidePayment,
   createCabwireOrBookingPayment,
+  getAllPaymentsByUserId,
   createPackagePayment,
   getAllPayments,
   getAllPaymentsWithDriver,

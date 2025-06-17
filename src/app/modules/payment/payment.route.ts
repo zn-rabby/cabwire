@@ -25,6 +25,16 @@ router.get(
   PaymentController.getAllPaymentsWithDriver
 );
 
+router.get(
+  '/:userId',
+  auth(),
+  // USER_ROLES.USER,
+  // USER_ROLES.DRIVER,
+  // USER_ROLES.ADMIN,
+  // USER_ROLES.SUPER_ADMIN
+  PaymentController.getAllPaymentsByUserId
+);
+
 // connect stripe account
 router.post('/create-connect-link', auth(USER_ROLES.DRIVER), createConnectLink);
 router.post(
