@@ -81,9 +81,8 @@ const userSchema = new Schema<IUser, UserModal>(
       type: Boolean,
       default: false,
     },
-    stripeAccountId: {
-      type: String,
-    },
+   
+    
     driverLicense: { type: driverLicenseSchema },
     driverVehicles: { type: driverVehicleSchema },
     authentication: {

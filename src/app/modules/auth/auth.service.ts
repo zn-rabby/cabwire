@@ -16,7 +16,6 @@ import cryptoToken from '../../../util/cryptoToken';
 import generateOTP from '../../../util/generateOTP';
 import { ResetToken } from '../resetToken/resetToken.model';
 import { User } from '../user/user.model';
-import { verifyToken } from '../../../util/verifyToken';
 
 //login
 const loginUserFromDB = async (payload: ILoginData) => {
@@ -257,7 +256,7 @@ const resendOtpFromDb = async (email: string) => {
      }
 
      // send email
-     const otp = generateOTP(4);
+     const otp = generateOTP();
      const values = { name: isExistUser.name, otp: otp, email: isExistUser.email! };
      const createAccountTemplate = emailTemplate.createAccount(values);
      emailHelper.sendEmail(createAccountTemplate);

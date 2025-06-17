@@ -56,8 +56,14 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
       'Valid payment method is required'
     );
   }
+  if (!payload.adminId || !isValidObjectId(payload.adminId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid adminId is required');
+  }
+  if (!payload.driverId || !isValidObjectId(payload.driverId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid driverId is required');
+  }
 
-  // 2️⃣ Fetch ride info (assuming fare is in Ride model)
+  // 2️⃣ Fetch ride info
   const ride = await Ride.findById(payload.rideId);
   if (!ride) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
@@ -68,7 +74,11 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare amount');
   }
 
-  // 3️⃣ Payment logic
+  // 3️⃣ Calculate admin and driver amount
+  const adminAmount = +(amount * 0.1).toFixed(2); // 10%
+  const driverAmount = +(amount * 0.9).toFixed(2); // 90%
+
+  // 4️⃣ Payment logic
   let paymentStatus: 'pending' | 'paid' | 'failed' = 'pending';
   let transactionId: string | undefined;
   let stripeSessionUrl: string | undefined;
@@ -90,8 +100,8 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
           quantity: 1,
         },
       ],
-      success_url: 'https://example.com',
-      cancel_url: 'https://example.com',
+      success_url: 'https://example.com/success',
+      cancel_url: 'https://example.com/cancel',
       metadata: {
         rideId: payload.rideId.toString(),
         userId: payload.userId.toString(),
@@ -109,16 +119,21 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
     transactionId = `offline_txn_${new Date().getTime()}`;
   }
 
-  // 4️⃣ Create Payment
+  // 5️⃣ Create Payment record
   const payment = await Payment.create({
     rideId: payload.rideId,
     userId: payload.userId,
-    amount,
     method: payload.method,
     status: paymentStatus,
+    amount,
     transactionId,
     sessionUrl: stripeSessionUrl,
     paidAt: paymentStatus === 'paid' ? new Date() : undefined,
+
+    adminId: payload.adminId,
+    driverId: payload.driverId,
+    adminAmount,
+    driverAmount,
   });
 
   if (!payment) {
@@ -133,6 +148,7 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
     redirectUrl: stripeSessionUrl,
   };
 };
+
 const createCabwireOrBookingPayment = async (payload: {
   sourceId: string;
   userId: string;

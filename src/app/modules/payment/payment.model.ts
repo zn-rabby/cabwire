@@ -5,11 +5,6 @@ const paymentSchema = new Schema<IPayment>(
   {
     rideId: { type: Schema.Types.ObjectId, ref: 'Ride', required: false },
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    // bookingId: {
-    //   type: Schema.Types.ObjectId,
-    //   ref: 'RideBooking',
-    //   required: true,
-    // },
 
     amount: { type: Number, required: true },
 
@@ -24,11 +19,17 @@ const paymentSchema = new Schema<IPayment>(
       default: 'pending',
     },
 
-    transactionId: String,
-    orderId: String,
-    signature: String,
+    transactionId: { type: String },
+    orderId: { type: String },
+    signature: { type: String },
 
-    paidAt: Date,
+    paidAt: { type: Date },
+
+    // 🆕 Added for driver/admin tracking
+    driverId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    adminId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    driverAmount: { type: Number, required: true },
+    adminAmount: { type: Number, required: true },
   },
   { timestamps: true }
 );
