@@ -165,28 +165,37 @@ const createCabwireOrBookingPayment = async (payload: {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
   }
 
-  // Fetch source (ride or booking)
+  // Fetch source (ride or ride-booking)
   let fare: number = 0;
+  let driverId: string;
+
   if (sourceType === 'cabwire') {
     const ride = await CabwireModel.findById(sourceId);
     if (!ride) throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
-    if (typeof ride.fare !== 'number') {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Fare not found in ride');
+    if (typeof ride.fare !== 'number' || !ride.driverId) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ride data');
     }
     fare = ride.fare;
-  } else if (sourceType === 'ride-booking') {
+    driverId = ride.driverId.toString();
+  } else {
     const booking = await RideBooking.findById(sourceId);
     if (!booking)
       throw new ApiError(StatusCodes.NOT_FOUND, 'Booking not found');
-    if (typeof booking.fare !== 'number') {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Fare not found in booking');
+    if (typeof booking.fare !== 'number' || !booking.driverId) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid booking data');
     }
     fare = booking.fare;
+    driverId = booking.driverId.toString();
   }
 
   if (!fare || fare <= 0) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare');
   }
+
+  // Calculate 90% for driver, 10% for admin
+  const driverAmount = parseFloat((fare * 0.9).toFixed(2));
+  const adminAmount = parseFloat((fare * 0.1).toFixed(2));
+  const adminId = '683d770e4a6d774b3e65fb8e'; // Fixed Admin ID
 
   let transactionId: string | undefined;
   let stripeSessionUrl: string | undefined;
@@ -226,11 +235,15 @@ const createCabwireOrBookingPayment = async (payload: {
     rideId: sourceType === 'cabwire' ? sourceId : undefined,
     rideBookingId: sourceType === 'ride-booking' ? sourceId : undefined,
     userId,
+    driverId,
+    adminId,
     method,
     status,
     transactionId,
     sessionUrl: stripeSessionUrl,
     amount: fare,
+    driverAmount,
+    adminAmount,
     paidAt: status === 'paid' ? new Date() : undefined,
   });
 
@@ -239,6 +252,7 @@ const createCabwireOrBookingPayment = async (payload: {
     redirectUrl: stripeSessionUrl,
   };
 };
+
 // payment.service.ts
 const createPackagePayment = async (payload: {
   packageId: string;
@@ -262,6 +276,19 @@ const createPackagePayment = async (payload: {
   if (typeof fare !== 'number' || fare <= 0) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare in package');
   }
+
+  // Commission calculation
+  const adminId = '683d770e4a6d774b3e65fb8e';
+  const driverId = pkg.driverId?.toString();
+  if (!driverId) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Driver ID is missing in package'
+    );
+  }
+
+  const adminAmount = Number((fare * 0.1).toFixed(2));
+  const driverAmount = Number((fare * 0.9).toFixed(2));
 
   let transactionId: string | undefined;
   let stripeSessionUrl: string | undefined;
@@ -306,6 +333,10 @@ const createPackagePayment = async (payload: {
     sessionUrl: stripeSessionUrl,
     amount: fare,
     paidAt: status === 'paid' ? new Date() : undefined,
+    adminId,
+    driverId,
+    adminAmount,
+    driverAmount,
   });
 
   return {
@@ -435,6 +466,7 @@ const transferToDriver = async (payload: {
   const { driverId, amount } = payload;
 
   const driver = await User.findById(driverId);
+  console.log(driver);
   if (!driver || !driver.stripeAccountId) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,

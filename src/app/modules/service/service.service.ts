@@ -32,6 +32,25 @@ const getServicesFromDB = async (): Promise<IService[]> => {
   }
   return result;
 };
+const getSingleServiceFromDB = async (
+  identifier: string
+): Promise<IService | null> => {
+  let service: IService | null = null;
+
+  if (identifier.match(/^[0-9a-fA-F]{24}$/)) {
+    // If it's a valid MongoDB ObjectId
+    service = await Service.findById(identifier);
+  } else {
+    // Otherwise, search by name
+    service = await Service.findOne({ name: identifier });
+  }
+
+  if (!service) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found');
+  }
+
+  return service;
+};
 
 const updateServiceToDB = async (id: string, payload: IService) => {
   const isExistService: any = await Service.findById(id);
@@ -75,6 +94,7 @@ const getServiceByCategoryFromDB = async (
 export const ServiceServices = {
   createServiceToDB,
   getServicesFromDB,
+  getSingleServiceFromDB,
   updateServiceToDB,
   deleteServiceToDB,
   getServiceByCategoryFromDB,

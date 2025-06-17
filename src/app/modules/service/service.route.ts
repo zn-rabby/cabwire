@@ -12,7 +12,11 @@ router.post(
   validateRequest(ServiceValidation.createServiceZodSchema),
   ServiceController.createService
 );
-
+router.get(
+  '/:ide',
+  // auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
+  ServiceController.getSingleService
+);
 router
   .route('/:id')
   .patch(
