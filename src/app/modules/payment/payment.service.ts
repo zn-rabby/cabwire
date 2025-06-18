@@ -396,10 +396,6 @@ export async function createStripeOnboardingLink(
 //   const payments = await stripe.balanceTransactions.list(); // optional: latest first
 //   return payments;
 // };
-const getAllPayments = async () => {
-  const payments = await Payment.find().sort({ createdAt: -1 }); // optional: latest first
-  return payments;
-};
 
 const getAllPaymentsWithDriver = async () => {
   // Step 1: Get all drivers with stripeAccountId
@@ -616,6 +612,11 @@ const transferToDriver = async (payload: {
 };
 
 // only for dasboard
+const getAllPayments = async () => {
+  const payments = await Payment.find().sort({ createdAt: -1 }); // optional: latest first
+  return payments;
+};
+
 const getAllEarninng = async () => {
   const payments = await Payment.find(); // 🔄 সব পেমেন্ট আনো, status বাদ
 
@@ -669,14 +670,13 @@ export const PaymentService = {
   createPackagePayment,
 
   getAllPaymentsByUserId,
-
-  getAllPayments,
   getAllPaymentsWithDriver,
   createAccountToStripe,
   transferToDriver,
   transferToStripeAccount,
 
   // only for dashbaorad
+  getAllPayments,
   getAllEarninng,
   getTotalRevenue,
 };

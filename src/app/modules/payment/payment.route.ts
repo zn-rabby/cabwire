@@ -16,6 +16,13 @@ router.get(
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   PaymentController.getTotalRevenue
 );
+router.get(
+  '/',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  PaymentController.getAllPayments
+);
+
+
 
 router.post('/ride-payment', PaymentController.createRidePayment);
 router.post(
@@ -25,7 +32,6 @@ router.post(
 // payment.route.ts or within your main route
 router.post('/package-payment', PaymentController.createPackagePayment);
 
-router.get('/', PaymentController.getAllPayments);
 router.get(
   '/driver',
   auth(

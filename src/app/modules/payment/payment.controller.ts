@@ -62,16 +62,6 @@ const createPackagePayment = async (
   }
 };
 
-const getAllPayments = catchAsync(async (req: Request, res: Response) => {
-  const payments = await PaymentService.getAllPayments();
-  res.status(200).json({
-    statusCode: 200,
-    success: true,
-    message: 'All payments retrieved successfully',
-    data: payments,
-  });
-});
-
 const getAllPaymentsWithDriver = catchAsync(
   async (req: Request, res: Response) => {
     const payments = await PaymentService.getAllPaymentsWithDriver();
@@ -157,6 +147,16 @@ const transferToDriver = catchAsync(async (req: Request, res: Response) => {
 });
 
 // only for dashboard
+const getAllPayments = catchAsync(async (req: Request, res: Response) => {
+  const payments = await PaymentService.getAllPayments();
+  res.status(200).json({
+    statusCode: 200,
+    success: true,
+    message: 'All payments retrieved successfully',
+    data: payments,
+  });
+});
+
 const getAllEarninng = catchAsync(async (req: Request, res: Response) => {
   const payments = await PaymentService.getAllEarninng(); // ঠিকভাবে সার্ভিস কল
   res.status(200).json({
@@ -166,6 +166,7 @@ const getAllEarninng = catchAsync(async (req: Request, res: Response) => {
     data: payments,
   });
 });
+
 const getTotalRevenue = catchAsync(async (req: Request, res: Response) => {
   const payments = await PaymentService.getTotalRevenue(); // ঠিকভাবে সার্ভিস কল
   res.status(200).json({
@@ -181,12 +182,15 @@ export const PaymentController = {
   createCabwireOrBookingPayment,
   getAllPaymentsByUserId,
   createPackagePayment,
-  getAllPayments,
+
   getAllPaymentsWithDriver,
   createConnectLink,
   createAccountToStripe,
   transferToDriver,
   withdrawToStripe,
+
+  // only for dashboard
+  getAllPayments,
   getAllEarninng,
   getTotalRevenue,
 };
