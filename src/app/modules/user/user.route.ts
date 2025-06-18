@@ -79,6 +79,12 @@ router.delete(
   UserController.deleteProfile
 );
 
+router.get(
+  '/details/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getSingleUser
+);
+
 //  only for users
 router.get(
   '/all-users',

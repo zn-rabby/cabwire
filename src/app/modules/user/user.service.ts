@@ -168,6 +168,13 @@ const deleteUser = async (id: string) => {
 
   return true;
 };
+const getSingleUserById = async (id: string) => {
+  const user = await User.findById(id).select('-password -authentication'); // sensitive data exclude
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+  return user;
+};
 
 // only for user
 const getAllUserQuery = async (query: Record<string, unknown>) => {
@@ -281,7 +288,7 @@ const driverStatusUpdate = async (id: string, payload: Partial<IUser>) => {
   if (user?.role !== 'USER' && user?.role !== 'DRIVER') {
     throw new ApiError(403, 'Only USER or DRIVER status can be blocked!');
   }
-  
+
   const result = await User.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,
@@ -346,6 +353,7 @@ export const UserService = {
   deleteUser,
   verifyUserPassword,
 
+  getSingleUserById,
   // user
   getAllUserQuery,
   getTotalUserCount,

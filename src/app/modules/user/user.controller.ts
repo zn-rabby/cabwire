@@ -135,6 +135,18 @@ const deleteProfile = catchAsync(async (req, res) => {
   });
 });
 
+const getSingleUser = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await UserService.getSingleUserById(id);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    data: result,
+    message: 'Single user fetched successfully!',
+  });
+});
+
 // user
 const getAllUsers = catchAsync(async (req, res) => {
   const result = await UserService.getAllUserQuery(req.query);
@@ -273,6 +285,9 @@ export const UserController = {
   updateStripeAccountIdByEmail,
   updateUserOnlineStatusByEmail,
   deleteProfile,
+
+  getSingleUser,
+
   // user
   getAllUsers,
   getTotalUserCount,
