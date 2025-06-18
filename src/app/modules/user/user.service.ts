@@ -217,8 +217,8 @@ const userStatusUpdate = async (id: string, payload: Partial<IUser>) => {
     throw new ApiError(404, 'User not found!');
   }
 
-  if (user?.role !== 'USER') {
-    throw new ApiError(403, 'Only user status can be blocked!');
+  if (user?.role !== 'USER' && user?.role !== 'DRIVER') {
+    throw new ApiError(403, 'Only USER or DRIVER status can be blocked!');
   }
 
   const result = await User.findByIdAndUpdate(id, payload, {
@@ -278,9 +278,10 @@ const driverStatusUpdate = async (id: string, payload: Partial<IUser>) => {
     throw new ApiError(404, 'User not found!');
   }
 
-  if (user?.role !== 'DRIVER') {
-    throw new ApiError(403, 'Only driver status can be updated!');
+  if (user?.role !== 'USER' && user?.role !== 'DRIVER') {
+    throw new ApiError(403, 'Only USER or DRIVER status can be blocked!');
   }
+  
   const result = await User.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,

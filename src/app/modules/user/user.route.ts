@@ -80,27 +80,59 @@ router.delete(
 );
 
 //  only for users
-router.get('/all-users', UserController.getAllUsers);
-router.get('/total-users-count', UserController.getTotalUserCount);
-router.get('/total-resent-users', UserController.getAllResentUsers);
+router.get(
+  '/all-users',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getAllUsers
+);
+router.get(
+  '/total-users-count',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getTotalUserCount
+);
+router.get(
+  '/total-resent-users',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getAllResentUsers
+);
 router.patch(
   '/block-user/:id',
-  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   UserController.userStatusUpdate
 );
 
 // only for driver
-router.get('/all-drivers', UserController.getAllDriver);
-router.get('/all-driver-count', UserController.getTotalDriverCount);
-router.get('/total-resent-driver', UserController.getAllResentDriver);
+router.get(
+  '/all-drivers',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getAllDriver
+);
+router.get(
+  '/all-driver-count',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getTotalDriverCount
+);
+router.get(
+  '/total-resent-driver',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getAllResentDriver
+);
 
 router.patch(
   '/block-driver/:id',
-  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   UserController.driverStatusUpdate
 );
 
-router.get('/all-driver', UserController.getAllUsers);
-router.get('/all-users-rasio', UserController.getAllUserRasio);
+router.get(
+  '/all-driver',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getAllUsers
+);
+router.get(
+  '/all-users-rasio',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getAllUserRasio
+);
 
 export const UserRoutes = router;
