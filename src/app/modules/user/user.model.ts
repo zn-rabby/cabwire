@@ -25,20 +25,16 @@ const driverVehicleSchema = new Schema(
     vehiclesRegistrationNumber: { type: Number },
     vehiclesInsuranceNumber: { type: Number },
     vehiclesPicture: { type: String },
-    vehiclesCategory: { type: Number },
+    vehiclesCategory: { type: String }, // ✅ Fixed from `string` to `String`
   },
   { _id: false }
 );
 
+// User main schema
 const userSchema = new Schema<IUser, UserModal>(
   {
-    name: {
-      type: String,
-      required: true,
-    },
-    location: {
-      type: String,
-    },
+    name: { type: String, required: true },
+    location: { type: String },
     geoLocation: {
       type: {
         type: String,
@@ -65,7 +61,7 @@ const userSchema = new Schema<IUser, UserModal>(
     password: {
       type: String,
       required: true,
-      select: 0,
+      select: false,
       minlength: 8,
     },
     image: {
@@ -77,44 +73,24 @@ const userSchema = new Schema<IUser, UserModal>(
       enum: ['active', 'block'],
       default: 'active',
     },
-    stripeAccountId: {
-      type: String,
-    },
-    verified: {
-      type: Boolean,
-      default: false,
-    },
-
+    stripeAccountId: { type: String },
+    verified: { type: Boolean, default: false },
     driverLicense: { type: driverLicenseSchema },
     driverVehicles: { type: driverVehicleSchema },
     authentication: {
       type: {
-        isResetPassword: {
-          type: Boolean,
-          default: false,
-        },
-        oneTimeCode: {
-          type: Number,
-          default: null,
-        },
-        expireAt: {
-          type: Date,
-          default: null,
-        },
+        isResetPassword: { type: Boolean, default: false },
+        oneTimeCode: { type: Number, default: null },
+        expireAt: { type: Date, default: null },
       },
-      select: 0,
+      select: false,
     },
-    isOnline: {
-      type: Boolean,
-      default: false,
-    },
-    isDeleted: {
-      type: Boolean,
-      default: false,
-    },
+    isOnline: { type: Boolean, default: false },
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
+
 userSchema.index({ geoLocation: '2dsphere' });
 //exist user check
 userSchema.statics.isExistUserById = async (id: string) => {

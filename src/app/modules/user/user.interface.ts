@@ -13,7 +13,7 @@ interface IDriverVehiclesInfo {
   vehiclesRegistrationNumber: Number;
   vehiclesInsuranceNumber: Number;
   vehiclesPicture: string;
-  vehiclesCategory: Number;
+  vehiclesCategory: string;
 }
 
 export type IUser = {

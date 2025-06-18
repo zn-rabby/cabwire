@@ -267,9 +267,9 @@ const resendOtpFromDb = async (email: string) => {
 };
 
 export const AuthService = {
-  verifyEmailToDB,
   loginUserFromDB,
   forgetPasswordToDB,
+  verifyEmailToDB,
   resetPasswordToDB,
   changePasswordToDB,
   resendOtpFromDb,

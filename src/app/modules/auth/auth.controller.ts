@@ -68,7 +68,6 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// refresh token
 const resendOtp = catchAsync(async (req, res) => {
   const { email } = req.body;
   await AuthService.resendOtpFromDb(email);

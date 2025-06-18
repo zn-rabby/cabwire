@@ -5,7 +5,6 @@ import { getSingleFilePath } from '../../../shared/getFilePath';
 import sendResponse from '../../../shared/sendResponse';
 import { UserService } from './user.service';
 import httpStatus from 'http-status';
-// import ApiError from '../../../errors/ApiError';
 
 const createUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -20,6 +19,7 @@ const createUser = catchAsync(
     });
   }
 );
+
 const getUserProfile = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;
   const result = await UserService.getUserProfileFromDB(user);
@@ -31,7 +31,7 @@ const getUserProfile = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
-//update profile
+
 const updateProfile = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
@@ -112,7 +112,6 @@ const updateUserOnlineStatusByEmail = catchAsync(
   }
 );
 
-//delete profile
 const deleteProfile = catchAsync(async (req, res) => {
   const { id }: any = req.user;
   const { password } = req.body;
@@ -136,7 +135,7 @@ const deleteProfile = catchAsync(async (req, res) => {
   });
 });
 
-// user >...............
+// user
 const getAllUsers = catchAsync(async (req, res) => {
   const result = await UserService.getAllUserQuery(req.query);
 
@@ -184,6 +183,7 @@ const userStatusUpdate = catchAsync(async (req, res) => {
   });
 });
 
+// driver
 const getAllDriver = catchAsync(async (req, res) => {
   const result = await UserService.getAllDriverQuery(req.query);
 
@@ -274,8 +274,8 @@ export const UserController = {
   updateUserOnlineStatusByEmail,
   deleteProfile,
   // user
-  getTotalUserCount,
   getAllUsers,
+  getTotalUserCount,
   getAllResentUsers,
   userStatusUpdate,
   // driver

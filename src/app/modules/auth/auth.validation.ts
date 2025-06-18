@@ -43,8 +43,8 @@ const createChangePasswordZodSchema = z.object({
 
 export const AuthValidation = {
   createVerifyEmailZodSchema,
-  createForgetPasswordZodSchema,
   createLoginZodSchema,
+  createForgetPasswordZodSchema,
   createResetPasswordZodSchema,
   createChangePasswordZodSchema,
 };
