@@ -5,6 +5,18 @@ import auth from '../../middlewares/auth';
 
 const router = Router();
 
+// only for dashbaord
+router.get(
+  '/total-erning',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  PaymentController.getAllEarninng
+);
+router.get(
+  '/total-revinue',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  PaymentController.getTotalRevenue
+);
+
 router.post('/ride-payment', PaymentController.createRidePayment);
 router.post(
   '/cabwire-payment',

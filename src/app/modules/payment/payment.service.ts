@@ -11,6 +11,7 @@ import { JwtPayload } from 'jsonwebtoken';
 import { CabwireModel } from '../cabwire/cabwire.model';
 import { RideBooking } from '../booking/booking.model';
 import { PackageModel } from '../package/package.model';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
 
 const stripe = new Stripe(config.stripe_secret_key as string);
@@ -464,6 +465,7 @@ const getAllPaymentsByUserId = async (id: string) => {
     payments,
   };
 };
+
 export const transferToStripeAccount = async (
   userId: string,
   amount: number
@@ -613,15 +615,68 @@ const transferToDriver = async (payload: {
   return transfer;
 };
 
+// only for dasboard
+const getAllEarninng = async () => {
+  const payments = await Payment.find(); // 🔄 সব পেমেন্ট আনো, status বাদ
+
+  let totalAmount = 0;
+  let totalDriverAmount = 0;
+  let totalAdminAmount = 0;
+
+  for (const payment of payments) {
+    totalAmount += Number(payment.amount || 0);
+    totalDriverAmount += Number(payment.driverAmount || 0);
+    totalAdminAmount += Number(payment.adminAmount || 0);
+  }
+
+  return {
+    totalAmount: totalAmount.toFixed(2),
+    totalDriverAmount: totalDriverAmount.toFixed(2),
+    totalAdminAmount: totalAdminAmount.toFixed(2),
+  };
+};
+
+const getTotalRevenue = async () => {
+  const currentYear = new Date().getFullYear();
+  const monthlyRevenue: { month: string; amount: number }[] = [];
+
+  for (let month = 0; month < 12; month++) {
+    const start = startOfMonth(new Date(currentYear, month, 1));
+    const end = endOfMonth(new Date(currentYear, month, 1));
+
+    // 🔍 Optional: remove status filter if your test data doesn't include 'success'
+    const payments = await Payment.find({
+      createdAt: { $gte: start, $lte: end },
+      // status: 'success',
+    });
+
+    const total = payments.reduce((sum, payment) => {
+      return sum + Number(payment.amount || 0);
+    }, 0);
+
+    monthlyRevenue.push({
+      month: start.toLocaleString('default', { month: 'short' }), // 'Jan', 'Feb', etc.
+      amount: parseFloat(total.toFixed(2)),
+    });
+  }
+
+  return monthlyRevenue;
+};
+
 export const PaymentService = {
   createRidePayment,
   createCabwireOrBookingPayment,
+  createPackagePayment,
+
   getAllPaymentsByUserId,
 
-  createPackagePayment,
   getAllPayments,
   getAllPaymentsWithDriver,
   createAccountToStripe,
   transferToDriver,
   transferToStripeAccount,
+
+  // only for dashbaorad
+  getAllEarninng,
+  getTotalRevenue,
 };

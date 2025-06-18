@@ -44,7 +44,7 @@ const createCabwireOrBookingPayment = async (
     next(error);
   }
 };
-// payment.controller.ts
+
 const createPackagePayment = async (
   req: Request,
   res: Response,
@@ -83,6 +83,7 @@ const getAllPaymentsWithDriver = catchAsync(
     });
   }
 );
+
 const getAllPaymentsByUserId = catchAsync(
   async (req: Request, res: Response) => {
     const userId = req.params.userId;
@@ -154,6 +155,27 @@ const transferToDriver = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+// only for dashboard
+const getAllEarninng = catchAsync(async (req: Request, res: Response) => {
+  const payments = await PaymentService.getAllEarninng(); // ঠিকভাবে সার্ভিস কল
+  res.status(200).json({
+    success: true,
+    statusCode: 200,
+    message: 'All payments retrieved successfully',
+    data: payments,
+  });
+});
+const getTotalRevenue = catchAsync(async (req: Request, res: Response) => {
+  const payments = await PaymentService.getTotalRevenue(); // ঠিকভাবে সার্ভিস কল
+  res.status(200).json({
+    success: true,
+    statusCode: 200,
+    message: 'All payments retrieved successfully',
+    data: payments,
+  });
+});
+
 export const PaymentController = {
   createRidePayment,
   createCabwireOrBookingPayment,
@@ -165,4 +187,6 @@ export const PaymentController = {
   createAccountToStripe,
   transferToDriver,
   withdrawToStripe,
+  getAllEarninng,
+  getTotalRevenue,
 };
