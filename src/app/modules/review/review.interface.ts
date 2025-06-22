@@ -1,9 +1,8 @@
 import { Model, Types } from "mongoose";
 
 export type IReview = {
-    user: Types.ObjectId;
-    driver: Types.ObjectId;
     service: Types.ObjectId;
+    user: Types.ObjectId;
     comment: string;
     rating: number;
 }

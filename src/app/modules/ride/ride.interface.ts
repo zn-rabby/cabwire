@@ -43,6 +43,9 @@ export interface IRide extends Document {
   orderId?: string;
   signature?: string;
 
+  rating?: number;
+  totalRating?: number;
+
   createdAt?: Date;
   updatedAt?: Date;
 }

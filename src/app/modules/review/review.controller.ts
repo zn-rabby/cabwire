@@ -1,19 +1,33 @@
-import { Request, Response } from "express";
-import catchAsync from "../../../shared/catchAsync";
-import { ReviewService } from "./review.service";
-import sendResponse from "../../../shared/sendResponse";
-import { StatusCodes } from "http-status-codes";
+import { Request, Response } from 'express';
+import catchAsync from '../../../shared/catchAsync';
+import { ReviewService } from './review.service';
+import sendResponse from '../../../shared/sendResponse';
+import { StatusCodes } from 'http-status-codes';
 
+const createReview = catchAsync(async (req: Request, res: Response) => {
+  const payload = {
+    user: req.user.id,
+    ...req.body,
+  };
+  const result = await ReviewService.createReviewToDB(payload);
 
-const createReview = catchAsync(async(req:Request, res:Response)=>{
-    const result = await ReviewService.createReviewToDB(req.body);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Review Created Successfully',
+    data: result,
+  });
+});
 
-    sendResponse(res, {
-        statusCode : StatusCodes.OK,
-        success: true,
-        message: "Review Created Successfully",
-        data: result
-    })
-})
+const getReview = catchAsync(async (req, res) => {
+  const result = await ReviewService.getReviewFromDB(req.params.id);
 
-export  const ReviewController = {createReview}
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Review Retrieved Successfully',
+    data: result,
+  });
+});
+
+export const ReviewController = { createReview, getReview };

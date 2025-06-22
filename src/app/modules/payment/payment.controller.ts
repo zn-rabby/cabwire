@@ -7,7 +7,6 @@ import {
 import catchAsync from '../../../shared/catchAsync';
 import { StatusCodes } from 'http-status-codes';
 import sendResponse from '../../../shared/sendResponse';
-import ApiError from '../../../errors/ApiError';
 
 const createRidePayment = async (
   req: Request,

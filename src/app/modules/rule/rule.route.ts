@@ -1,4 +1,4 @@
-import express, { Router } from 'express';
+import { Router } from 'express';
 import { USER_ROLES } from '../../../enums/user';
 import auth from '../../middlewares/auth';
 import { RuleController } from './rule.controller';
@@ -8,7 +8,7 @@ const router = Router();
 router
   .route('/about')
   .post(
-    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     RuleController.createAbout
   )
   .get(RuleController.getAbout);
@@ -17,7 +17,7 @@ router
 router
   .route('/privacy-policy')
   .post(
-    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     RuleController.createPrivacyPolicy
   )
   .get(RuleController.getPrivacyPolicy);
@@ -26,7 +26,7 @@ router
 router
   .route('/terms-and-conditions')
   .post(
-    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     RuleController.createTermsAndCondition
   )
   .get(RuleController.getTermsAndCondition);

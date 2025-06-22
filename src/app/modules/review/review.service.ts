@@ -1,41 +1,50 @@
 import mongoose from 'mongoose';
 import { IReview } from './review.interface';
 import { Review } from './review.model';
-import { StatusCodes } from 'http-status-codes';
-import { User } from '../user/user.model'; 
 import ApiError from '../../../errors/ApiError';
+import { StatusCodes } from 'http-status-codes';
+import { Ride } from '../ride/ride.model';
 
 const createReviewToDB = async (payload: IReview): Promise<IReview> => {
-  // Fetch baber and check if it exists in one query
-  const user: any = await User.findById(payload.user);
-  if (!user) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'No User Found');
+  // Validate ID before making a database call
+  if (!mongoose.Types.ObjectId.isValid(payload.service)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Offer ID');
+  }
+
+  console.log(payload);
+
+  // Fetch service and check if it exists in one query
+  const service: any = await Ride.findById(payload.service);
+  if (!service) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'No Service Found');
   }
 
   if (payload.rating) {
     // checking the rating is valid or not;
+
     const rating = Number(payload.rating);
     if (rating < 1 || rating > 5) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid rating value');
     }
 
     // Update service's rating and total ratings count
-    const ratingCount = user.ratingCount + 1;
+    const totalRating = service.totalRating + 1;
 
     let newRating;
-    if (user.rating === null || user.rating === 0) {
+    if (service.rating === null || service.rating === 0) {
       // If no previous ratings, the new rating is the first one
       newRating = rating;
+      console.log(11, newRating);
     } else {
       // Calculate the new rating based on previous ratings
-      newRating = (user.rating * user.ratingCount + rating) / ratingCount;
+      newRating = (service.rating * service.totalRating + rating) / totalRating;
     }
 
-    await User.findByIdAndUpdate(
-      { _id: payload.user },
-      { rating: parseFloat(newRating.toFixed(2)), ratingCount: ratingCount },
-      { new: true }
-    );
+    service.totalRating = totalRating;
+    service.rating = parseFloat(newRating.toFixed(2));
+
+    // Save the updated salon document
+    await service.save();
   }
 
   const result = await Review.create(payload);
@@ -45,4 +54,14 @@ const createReviewToDB = async (payload: IReview): Promise<IReview> => {
   return payload;
 };
 
-export const ReviewService = { createReviewToDB };
+const getReviewFromDB = async (id: any): Promise<IReview[]> => {
+  // Validate ID before making a database call
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Offer ID');
+  }
+
+  const reviews = await Review.find({ service: id });
+  return reviews;
+};
+
+export const ReviewService = { createReviewToDB, getReviewFromDB };

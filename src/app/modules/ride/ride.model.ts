@@ -21,6 +21,10 @@ const rideSchema = new Schema<IRide>(
     distance: { type: Number },
     duration: { type: Number },
 
+    // ✅ Add these for review rating logic
+    rating: { type: Number },
+    totalRating: { type: Number },
+
     fare: { type: Number }, // Optional fare calculated based on distance & category
 
     rideStatus: {
