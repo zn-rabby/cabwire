@@ -15,6 +15,7 @@ import { CategoryRoutes } from '../app/modules/category/category.route';
 import { PackageRoutes } from '../app/modules/package/package.route';
 import { CabwireRoutes } from '../app/modules/cabwire/cabwire.route';
 import { ReviewRoutes } from '../app/modules/review/review.routes';
+import { CallRoutes } from '../app/modules/call/call.router';
 const router = express.Router();
 
 const apiRoutes = [
@@ -31,6 +32,10 @@ const apiRoutes = [
   {
     path: '/review',
     route: ReviewRoutes,
+  },
+  {
+    path: '/call',
+    route: CallRoutes,
   },
   {
     path: '/category',

@@ -9,10 +9,10 @@ const payload = {
   role: USER_ROLES.SUPER_ADMIN,
   password: config.super_admin.password,
   verified: true,
-  location:{
-    lat: 4,
-    lng: 4
-  }
+  // location:{
+  //   lat: 4,
+  //   lng: 4
+  // }
 };
 
 export const seedSuperAdmin = async () => {
