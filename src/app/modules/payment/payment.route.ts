@@ -21,8 +21,7 @@ router.get(
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   PaymentController.getAllPayments
 );
-
-
+router.get('/check-balance', PaymentController.checkStripeBalance);
 
 router.post('/ride-payment', PaymentController.createRidePayment);
 router.post(

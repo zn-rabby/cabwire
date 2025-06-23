@@ -145,6 +145,22 @@ const transferToDriver = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const checkStripeBalance = catchAsync(async (req: Request, res: Response) => {
+  const { available, pending } = await PaymentService.getStripeBalance();
+
+  console.log('🟢 Available Balance:', available);
+  console.log('🟡 Pending Balance:', pending);
+
+  res.status(200).json({
+    success: true,
+    message: 'Stripe balance retrieved successfully',
+    data: {
+      available,
+      pending,
+    },
+  });
+});
+
 // only for dashboard
 const getAllPayments = catchAsync(async (req: Request, res: Response) => {
   const payments = await PaymentService.getAllPayments();
@@ -187,6 +203,7 @@ export const PaymentController = {
   createAccountToStripe,
   transferToDriver,
   withdrawToStripe,
+  checkStripeBalance,
 
   // only for dashboard
   getAllPayments,

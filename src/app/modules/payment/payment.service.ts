@@ -611,6 +611,14 @@ const transferToDriver = async (payload: {
   return transfer;
 };
 
+const getStripeBalance = async () => {
+  const balance = await stripe.balance.retrieve();
+  return {
+    available: balance.available,
+    pending: balance.pending,
+  };
+};
+
 // only for dasboard
 const getAllPayments = async () => {
   const payments = await Payment.find().sort({ createdAt: -1 }); // optional: latest first
@@ -674,6 +682,7 @@ export const PaymentService = {
   createAccountToStripe,
   transferToDriver,
   transferToStripeAccount,
+  getStripeBalance,
 
   // only for dashbaorad
   getAllPayments,
