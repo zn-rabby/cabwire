@@ -45,13 +45,11 @@ const createReviewToDB = async (payload: IReview): Promise<IReview> => {
   return result;
 };
 
-const getReviewFromDB = async (id: any): Promise<IReview[]> => {
-  // Validate ID before making a database call
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Offer ID');
+const getReviewFromDB = async (id: any) => {
+  const reviews = await Review.findById(id);
+  if (!reviews) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'not found');
   }
-
-  const reviews = await Review.find({ service: id });
   return reviews;
 };
 

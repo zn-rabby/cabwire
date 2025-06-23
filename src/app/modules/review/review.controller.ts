@@ -21,7 +21,6 @@ const createReview = catchAsync(async (req: Request, res: Response) => {
 
 const getReview = catchAsync(async (req, res) => {
   const result = await ReviewService.getReviewFromDB(req.params.id);
-
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
