@@ -53,4 +53,18 @@ const getReviewFromDB = async (id: any) => {
   return reviews;
 };
 
-export const ReviewService = { createReviewToDB, getReviewFromDB };
+const getReviewsFromDB = async (id: any): Promise<IReview[]> => {
+  // Validate ID before making a database call
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Offer ID');
+  }
+
+  const reviews = await Review.find({ service: id });
+  return reviews;
+};
+
+export const ReviewService = {
+  createReviewToDB,
+  getReviewFromDB,
+  getReviewsFromDB,
+};

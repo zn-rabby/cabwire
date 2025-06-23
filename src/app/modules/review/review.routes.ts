@@ -12,6 +12,7 @@ router.post(
   auth(USER_ROLES.USER),
   ReviewController.createReview
 );
-router.get('/:id', auth(USER_ROLES.USER), ReviewController.getReview);
+router.get('/:id', auth(USER_ROLES.USER), ReviewController.getReviews);
+router.get('/review/:id', auth(USER_ROLES.USER), ReviewController.getReview);
 
 export const ReviewRoutes = router;
