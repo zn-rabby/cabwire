@@ -10,7 +10,7 @@ export const locationSchema = {
 const rideSchema = new Schema<IRide>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    driverId: { type: Schema.Types.ObjectId, ref: 'Driver' },
+    driverId: { type: Schema.Types.ObjectId, ref: 'User' },
 
     service: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
@@ -24,7 +24,6 @@ const rideSchema = new Schema<IRide>(
     // ✅ Add these for review rating logic
     rating: { type: Number },
     totalRating: { type: Number },
-
     fare: { type: Number }, // Optional fare calculated based on distance & category
 
     rideStatus: {

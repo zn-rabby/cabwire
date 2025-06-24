@@ -23,7 +23,7 @@ export interface ICabwire extends Document {
   distance?: number;
   duration?: number;
   fare?: number;
-    otp?: string;
+  otp?: string;
 
   rideStatus: RideStatus;
   setAvailable: number;

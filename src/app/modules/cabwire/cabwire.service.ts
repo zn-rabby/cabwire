@@ -57,7 +57,7 @@ const createRideByDriver = async (payload: ICabwire): Promise<ICabwire> => {
     status: ride.rideStatus,
     fare: ride.fare,
     distance: ride.distance,
-    duration: ride.duration, 
+    duration: ride.duration,
   });
 
   return ride;

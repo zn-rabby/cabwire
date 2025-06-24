@@ -32,7 +32,7 @@ export const findNearestOnlineRiders = async (location: {
           type: 'Point',
           coordinates: location.coordinates,
         },
-        $maxDistance: 5000, // 5 km radius
+        $maxDistance: 50000, // 5 km radius
       },
     },
   });
@@ -225,28 +225,33 @@ const acceptRide = async (rideId: string, driverId: string) => {
   }
   return updatedRide;
 };
-
+ 
 // cancel ride
 const cancelRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
 
-  if (!ride || ride.rideStatus !== 'requested') {
+  if (!ride) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
+  }
+
+  // Allow cancellation only if ride is in 'requested' or 'accepted' status
+  if (!['requested', 'accepted'].includes(ride.rideStatus)) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Invalid ride or already cancelled'
+      `Ride cannot be cancelled in '${ride.rideStatus}' status`
     );
   }
 
-  // Update status
+  // Update status to 'cancelled'
   ride.rideStatus = 'cancelled';
   await ride.save();
 
-  // Emit ride-cancelled event
+  // Emit ride-cancelled notification
   if (ride._id) {
     sendNotifications({
       receiver: ride._id,
       driverId,
-      text: 'Cancel ride successsfully',
+      text: 'Ride cancelled successfully',
     });
   }
 
