@@ -33,11 +33,18 @@ const createPackagePayment = async (
   next: NextFunction
 ) => {
   try {
-    const payment = await PaymentService.createPackagePayment(req.body);
+    const userId = req.user?.id;
+    const { packageId } = req.body;
+
+    const result = await PaymentService.createPackagePayment({
+      packageId,
+      userId,
+    });
+
     res.status(201).json({
       success: true,
       message: 'Package payment created successfully',
-      data: payment,
+      data: result,
     });
   } catch (error) {
     next(error);

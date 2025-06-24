@@ -159,7 +159,6 @@ const createPackagePayment = async (payload: {
 }) => {
   const { packageId, userId } = payload;
 
-  // ✅ Validate input
   if (!packageId || !isValidObjectId(packageId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid packageId is required');
   }
@@ -168,35 +167,31 @@ const createPackagePayment = async (payload: {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid userId is required');
   }
 
-  // ✅ Fetch package
-  const pkg = await PackageModel.findById(packageId);
-  if (!pkg) {
+  const packageDoc = await PackageModel.findById(packageId);
+  if (!packageDoc) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Package not found');
   }
 
-  const method = pkg.paymentMethod;
-  const fare = pkg.fare;
-  const driverId = pkg.driverId?.toString();
-  const adminId = '683d770e4a6d774b3e65fb8e';
+  const method = packageDoc.paymentMethod;
+  const fare = packageDoc.fare;
+  const driverId = packageDoc.driverId?.toString();
+  const adminId = '683d770e4a6d774b3e65fb8e'; // TODO: Optional - move to config/env
 
-  // ✅ Validate required fields
   if (!method || !['stripe', 'offline'].includes(method)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
   }
 
   if (!driverId || !isValidObjectId(driverId)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Driver ID missing or invalid');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Driver ID is missing or invalid');
   }
 
   if (!fare || fare <= 0) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare in package');
   }
 
-  // ✅ Split amount
   const adminAmount = +(fare * 0.1).toFixed(2);
   const driverAmount = +(fare * 0.9).toFixed(2);
 
-  // ✅ Initialize payment fields
   let paymentStatus: PaymentStatus = 'paid';
   let transactionId: string;
   let stripeSessionUrl: string | undefined;
@@ -230,17 +225,14 @@ const createPackagePayment = async (payload: {
 
     stripeSessionUrl = session.url ?? undefined;
     transactionId = session.id;
-    paymentStatus = 'paid'; // Stripe payment not confirmed yet
+    paymentStatus = 'paid'; // Will be confirmed by webhook
   } else {
     transactionId = `offline_txn_${Date.now()}`;
     paymentStatus = 'paid';
-
-    // ✅ update package as paid
-    pkg.paymentStatus = 'paid';
-    await pkg.save();
+    packageDoc.paymentStatus = 'paid';
+    await packageDoc.save();
   }
 
-  // ✅ Create payment entry
   const payment = await Payment.create({
     packageId,
     userId,
@@ -257,10 +249,7 @@ const createPackagePayment = async (payload: {
   });
 
   if (!payment) {
-    throw new ApiError(
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Payment creation failed'
-    );
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Payment creation failed');
   }
 
   return {
@@ -268,7 +257,6 @@ const createPackagePayment = async (payload: {
     redirectUrl: stripeSessionUrl,
   };
 };
-
 
 // Generate Stripe onboarding link
 export async function createStripeOnboardingLink(
