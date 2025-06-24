@@ -7,6 +7,9 @@ import {
 import catchAsync from '../../../shared/catchAsync';
 import { StatusCodes } from 'http-status-codes';
 import sendResponse from '../../../shared/sendResponse';
+import ApiError from '../../../errors/ApiError';
+
+// controllers/payment.controller.ts
 
 const createRidePayment = async (
   req: Request,
@@ -14,7 +17,18 @@ const createRidePayment = async (
   next: NextFunction
 ) => {
   try {
-    const payment = await PaymentService.createRidePayment(req.body);
+    // ✅ userId from auth
+    const userId = req.user?.id;
+    console.log(22, req.user);
+    if (!userId) {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized user');
+    }
+
+    const payment = await PaymentService.createRidePayment({
+      ...req.body,
+      userId,
+    });
+
     res.status(201).json({
       success: true,
       message: 'Payment created successfully',

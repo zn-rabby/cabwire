@@ -13,6 +13,7 @@ import { RideBooking } from '../booking/booking.model';
 import { PackageModel } from '../package/package.model';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
+import { PaymentStatus } from '../ride/ride.interface';
 
 const stripe = new Stripe(config.stripe_secret_key as string);
 // // const YOUR_DOMAIN = '10.0.70.163:5005'; // replace in production
@@ -76,47 +77,57 @@ export async function createOrGetStripeAccount(
 }
 
 const createRidePayment = async (payload: Partial<IPayment>) => {
-  // 1️⃣ Validate required IDs
-  if (!payload.rideId || !isValidObjectId(payload.rideId)) {
+  const { rideId, userId, adminId } = payload;
+
+  // ✅ Validate input
+  if (!rideId || !isValidObjectId(rideId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid rideId is required');
   }
-  if (!payload.userId || !isValidObjectId(payload.userId)) {
+
+  if (!userId || !isValidObjectId(userId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid userId is required');
   }
-  if (!payload.method || !['stripe', 'offline'].includes(payload.method)) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Valid payment method is required'
-    );
-  }
-  if (!payload.adminId || !isValidObjectId(payload.adminId)) {
+
+  if (!adminId || !isValidObjectId(adminId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid adminId is required');
   }
-  if (!payload.driverId || !isValidObjectId(payload.driverId)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid driverId is required');
-  }
 
-  // 2️⃣ Fetch ride info
-  const ride = await Ride.findById(payload.rideId);
+  // ✅ Fetch ride
+  const ride = await Ride.findById(rideId);
+
   if (!ride) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
   }
 
   const amount = ride.fare;
+  const driverId = ride.driverId;
+  const method = ride.paymentMethod; // get from Ride model
+
+  if (!method || !['stripe', 'offline'].includes(method)) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid payment method in ride'
+    );
+  }
+
+  if (!driverId || !isValidObjectId(driverId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Driver info missing in ride');
+  }
+
   if (!amount || amount <= 0) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare amount');
   }
 
-  // 3️⃣ Calculate admin and driver amount
-  const adminAmount = +(amount * 0.1).toFixed(2); // 10%
-  const driverAmount = +(amount * 0.9).toFixed(2); // 90%
+  // ✅ Split amount
+  const adminAmount = +(amount * 0.1).toFixed(2);
+  const driverAmount = +(amount * 0.9).toFixed(2);
 
-  // 4️⃣ Payment logic
-  let paymentStatus: 'pending' | 'paid' | 'failed' = 'pending';
+  // ✅ Initialize payment fields
+  let paymentStatus: PaymentStatus = 'paid';
   let transactionId: string | undefined;
   let stripeSessionUrl: string | undefined;
 
-  if (payload.method === 'stripe') {
+  if (method === 'stripe') {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
@@ -126,7 +137,7 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
             currency: 'usd',
             product_data: {
               name: 'Ride Fare',
-              description: `Payment for ride ID: ${payload.rideId}`,
+              description: `Payment for ride ID: ${rideId}`,
             },
             unit_amount: Math.round(amount * 100),
           },
@@ -136,35 +147,33 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
       success_url: 'https://example.com/success',
       cancel_url: 'https://example.com/cancel',
       metadata: {
-        rideId: payload.rideId.toString(),
-        userId: payload.userId.toString(),
+        rideId: rideId.toString(),
+        userId: userId.toString(),
+        method,
         amount: amount.toString(),
-        method: payload.method,
       },
     });
 
     stripeSessionUrl = session.url ?? undefined;
     transactionId = session.id;
-    paymentStatus = 'pending';
+    paymentStatus = 'pending'; // since payment is not yet completed
   } else {
-    // Offline payment
     paymentStatus = 'paid';
-    transactionId = `offline_txn_${new Date().getTime()}`;
+    transactionId = `offline_txn_${Date.now()}`;
   }
 
-  // 5️⃣ Create Payment record
+  // ✅ Create payment entry
   const payment = await Payment.create({
-    rideId: payload.rideId,
-    userId: payload.userId,
-    method: payload.method,
+    rideId,
+    userId,
+    method,
     status: paymentStatus,
     amount,
     transactionId,
     sessionUrl: stripeSessionUrl,
     paidAt: paymentStatus === 'paid' ? new Date() : undefined,
-
-    adminId: payload.adminId,
-    driverId: payload.driverId,
+    adminId,
+    driverId,
     adminAmount,
     driverAmount,
   });
@@ -176,11 +185,19 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
     );
   }
 
+  // ✅ Update Ride.paymentStatus if paid
+  if (paymentStatus === 'paid') {
+    ride.paymentStatus = 'paid';
+    await ride.save();
+  }
+
   return {
     payment,
     redirectUrl: stripeSessionUrl,
   };
 };
+
+ 
 
 const createCabwireOrBookingPayment = async (payload: {
   sourceId: string;

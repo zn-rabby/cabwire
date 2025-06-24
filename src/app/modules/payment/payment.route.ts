@@ -23,7 +23,12 @@ router.get(
 );
 router.get('/check-balance', PaymentController.checkStripeBalance);
 
-router.post('/ride-payment', PaymentController.createRidePayment);
+router.post(
+  '/ride-payment',
+  auth(USER_ROLES.USER, USER_ROLES.DRIVER, USER_ROLES.ADMIN),
+  PaymentController.createRidePayment
+);
+
 router.post(
   '/cabwire-payment',
   PaymentController.createCabwireOrBookingPayment

@@ -262,7 +262,7 @@ const cancelRide = async (rideId: string, driverId: string) => {
 const continueRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
 
-  if (!ride || ride.rideStatus !== 'requested') {
+  if (!ride || ride.rideStatus !== 'accepted') {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Invalid ride or already continue'
