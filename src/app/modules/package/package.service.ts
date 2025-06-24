@@ -1,8 +1,8 @@
 import { PackageModel } from './package.model';
-import { IPackage } from './package.interface';
+import { IPackage, PaymentStatus } from './package.interface';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
-import { Types } from 'mongoose';
+import { isValidObjectId, Types } from 'mongoose';
 import { findNearestOnlineRiders } from '../ride/ride.service';
 import { sendNotifications } from '../../../util/notificaton';
 import {
@@ -10,6 +10,8 @@ import {
   getDistanceFromLatLonInKm,
 } from '../../../util/calculateDistance';
 import generateOTP from '../../../util/generateOTP';
+import stripe from '../../../config/stripe';
+import { Payment } from '../payment/payment.model';
 
 const createPackageToDB = async (
   payload: Partial<IPackage>,
@@ -299,6 +301,117 @@ const completePackageWithOtp = async (rideId: string, enteredOtp: string) => {
 
   return updatedRide;
 };
+// payment.service.ts
+const createPackagePayment = async (payload: {
+  packageId: string;
+  userId: string;
+}) => {
+  const { packageId, userId } = payload;
+
+  if (!packageId || !isValidObjectId(packageId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid packageId is required');
+  }
+
+  if (!userId || !isValidObjectId(userId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid userId is required');
+  }
+
+  const packageDoc = await PackageModel.findById(packageId);
+  if (!packageDoc) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Package not found');
+  }
+
+  const method = packageDoc.paymentMethod;
+  const fare = packageDoc.fare;
+  const driverId = packageDoc.driverId?.toString();
+  const adminId = '683d770e4a6d774b3e65fb8e'; // TODO: Optional - move to config/env
+
+  if (!method || !['stripe', 'offline'].includes(method)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
+  }
+
+  if (!driverId || !isValidObjectId(driverId)) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Driver ID is missing or invalid'
+    );
+  }
+
+  if (!fare || fare <= 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare in package');
+  }
+
+  const adminAmount = +(fare * 0.1).toFixed(2);
+  const driverAmount = +(fare * 0.9).toFixed(2);
+
+  let paymentStatus: PaymentStatus = 'paid';
+  let transactionId: string;
+  let stripeSessionUrl: string | undefined;
+
+  if (method === 'stripe') {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Package Delivery Payment',
+              description: `Payment for package ID: ${packageId}`,
+            },
+            unit_amount: Math.round(fare * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: 'https://re-cycle-mart-client.vercel.app/success',
+      cancel_url: 'https://re-cycle-mart-client.vercel.app/cancelled',
+      metadata: {
+        packageId: packageId.toString(),
+        userId: userId.toString(),
+        method,
+        amount: fare.toString(),
+      },
+    });
+
+    stripeSessionUrl = session.url ?? undefined;
+    transactionId = session.id;
+    paymentStatus = 'paid'; // Will be confirmed by webhook
+  } else {
+    transactionId = `offline_txn_${Date.now()}`;
+    paymentStatus = 'paid';
+    packageDoc.paymentStatus = 'paid';
+    await packageDoc.save();
+  }
+
+  const payment = await Payment.create({
+    packageId,
+    userId,
+    method,
+    status: paymentStatus,
+    transactionId,
+    sessionUrl: stripeSessionUrl,
+    amount: fare,
+    paidAt: paymentStatus === 'paid' ? new Date() : undefined,
+    adminId,
+    driverId,
+    adminAmount,
+    driverAmount,
+  });
+
+  if (!payment) {
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Payment creation failed'
+    );
+  }
+
+  return {
+    payment,
+    redirectUrl: stripeSessionUrl,
+  };
+};
 
 export const PackageService = {
   createPackageToDB,
@@ -307,4 +420,5 @@ export const PackageService = {
   markPackageAsDelivered,
   requestClosePackage,
   completePackageWithOtp,
+  createPackagePayment,
 };

@@ -27,30 +27,6 @@ const createCabwireOrBookingPayment = async (
   }
 };
 
-const createPackagePayment = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const userId = req.user?.id;
-    const { packageId } = req.body;
-
-    const result = await PaymentService.createPackagePayment({
-      packageId,
-      userId,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Package payment created successfully',
-      data: result,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 const getAllPaymentsWithDriver = catchAsync(
   async (req: Request, res: Response) => {
     const payments = await PaymentService.getAllPaymentsWithDriver();
@@ -185,7 +161,6 @@ const getTotalRevenue = catchAsync(async (req: Request, res: Response) => {
 export const PaymentController = {
   createCabwireOrBookingPayment,
   getAllPaymentsByUserId,
-  createPackagePayment,
 
   getAllPaymentsWithDriver,
   createConnectLink,

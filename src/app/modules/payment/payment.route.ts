@@ -34,16 +34,6 @@ router.post(
   PaymentController.createCabwireOrBookingPayment
 );
 // payment.route.ts or within your main route
-router.post(
-  '/package-payment',
-  auth(
-    USER_ROLES.USER,
-    USER_ROLES.DRIVER,
-    USER_ROLES.ADMIN,
-    USER_ROLES.SUPER_ADMIN
-  ),
-  PaymentController.createPackagePayment
-);
 
 router.get(
   '/driver',

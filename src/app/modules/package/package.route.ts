@@ -50,4 +50,15 @@ router.post(
   PackageController.completePackageeWithOtp
 );
 
+router.post(
+  '/package-payment',
+  auth(
+    USER_ROLES.USER,
+    USER_ROLES.DRIVER,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  PackageController.createPackagePayment
+);
+
 export const PackageRoutes = router;

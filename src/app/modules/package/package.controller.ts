@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { StatusCodes } from 'http-status-codes';
@@ -147,6 +147,29 @@ const completePackageeWithOtp = catchAsync(
     });
   }
 );
+const createPackagePayment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.id;
+    const { packageId } = req.body;
+
+    const result = await PackageService.createPackagePayment({
+      packageId,
+      userId,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Package payment created successfully',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const PackageController = {
   createPackage,
@@ -155,4 +178,5 @@ export const PackageController = {
   markAsDelivered,
   requestClosePackage,
   completePackageeWithOtp,
+  createPackagePayment,
 };
