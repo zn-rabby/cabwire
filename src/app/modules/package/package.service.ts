@@ -131,6 +131,43 @@ const acceptPackageByDriver = async (
   return existing;
 };
 
+const continuePackageDeliver = async (
+  packageId: string,
+  driverId: Types.ObjectId
+) => {
+  const existing = await PackageModel.findOne({ _id: packageId });
+
+  if (!existing) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Package not found');
+  }
+
+  if (existing.packageStatus !== 'accepted') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Only accepted packages can be continued'
+    );
+  }
+
+  existing.packageStatus = 'continue';
+
+  await existing.save();
+
+  sendNotifications({
+    text: '📦 Package delivery has been continued by the driver.',
+    packageId: existing._id,
+    userId: existing.userId,
+    receiver: existing.userId?.toString(),
+    pickupLocation: existing.pickupLocation,
+    dropoffLocation: existing.dropoffLocation,
+    status: existing.packageStatus,
+    fare: existing.fare,
+    distance: existing.distance,
+    event: 'package-continued',
+  });
+
+  return existing;
+};
+
 const markPackageAsDelivered = async (
   packageId: string,
   driverId: Types.ObjectId
@@ -148,7 +185,7 @@ const markPackageAsDelivered = async (
     );
   }
 
-  if (pkg.packageStatus !== 'accepted') {
+  if (pkg.packageStatus !== 'continue') {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Package is not in accepted state'
@@ -174,11 +211,12 @@ const markPackageAsDelivered = async (
 
   return pkg;
 };
+
 // request colose ride
 const requestClosePackage = async (rideId: string, driverId: string) => {
   const ride = await PackageModel.findById(rideId);
 
-  if (!ride || ride.packageStatus !== 'requested') {
+  if (!ride || ride.packageStatus !== 'delivered') {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Invalid ride or ride not in progress'
@@ -211,84 +249,61 @@ const requestClosePackage = async (rideId: string, driverId: string) => {
 const completePackageWithOtp = async (rideId: string, enteredOtp: string) => {
   console.log('Verifying OTP for ride:', rideId, 'with OTP:', enteredOtp);
 
-  // First check if ride exists and get current OTP
-  const ride = await PackageModel.findById(rideId).select('+otp'); // Explicitly include otp
+  const ride = await PackageModel.findById(rideId).select('+otp');
 
   if (!ride) {
-    console.log('Ride not found');
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not found');
   }
 
-  console.log('Ride details:', {
-    rideId: ride._id,
-    status: ride.packageStatus,
-    storedOtp: ride.otp,
-    otpType: typeof ride.otp,
-    enteredOtp,
-    enteredOtpType: typeof enteredOtp,
-  });
-
-  if (ride.packageStatus !== 'requested') {
+  if (ride.packageStatus !== 'delivered') {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not in progress');
   }
 
   if (!ride.otp || ride.otp.toString().trim() === '') {
-    console.error('OTP missing in ride document');
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'No OTP generated for this ride'
     );
   }
 
-  // Compare as strings
   if (ride.otp.toString() !== enteredOtp.toString()) {
-    console.log('OTP mismatch:', {
-      stored: ride.otp,
-      entered: enteredOtp,
-      storedType: typeof ride.otp,
-      enteredType: typeof enteredOtp,
-    });
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
   }
 
-  // Use atomic update - fixed the condition
+  // ✅ FIXED: Correct status condition for atomic update
   const updatedRide = await PackageModel.findOneAndUpdate(
     {
       _id: rideId,
-      otp: ride.otp, // Ensure OTP hasn't changed
-      packageStatus: 'requested', // ✅ FIXED: correct current state
+      otp: ride.otp,
+      packageStatus: 'delivered', // correct current state
     },
     {
-      $set: { packageStatus: 'delivered' }, // ✅ Mark as delivered
-      $unset: { otp: '' }, // ✅ Remove OTP after use
+      $set: { packageStatus: 'completed' }, // final state
+      $unset: { otp: '' },
     },
     { new: true }
   );
 
   if (!updatedRide) {
-    console.error('Concurrent modification detected');
     throw new ApiError(
       StatusCodes.CONFLICT,
       'Ride state changed during verification'
     );
   }
 
-  // Emit ride-completed event
-  if (updatedRide._id) {
-    sendNotifications({
-      rideId: updatedRide._id,
-      receiver: updatedRide._id,
-      text: 'Ride completed successfully',
-    });
-  }
+  sendNotifications({
+    rideId: updatedRide._id,
+    receiver: updatedRide._id,
+    text: 'Ride completed successfully',
+  });
 
-  console.log('Ride completed successfully:', updatedRide._id);
   return updatedRide;
 };
 
 export const PackageService = {
   createPackageToDB,
   acceptPackageByDriver,
+  continuePackageDeliver,
   markPackageAsDelivered,
   requestClosePackage,
   completePackageWithOtp,

@@ -1,5 +1,5 @@
 import { Document, Types } from 'mongoose';
-export type packageStatus = 'requested' | 'accepted' | 'delivered';
+export type packageStatus = 'requested' | 'accepted' | 'delivered' | 'continue';
 export type PaymentMethod = 'stripe' | 'offline';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
 
@@ -12,7 +12,7 @@ export interface IPackage extends Document {
   userId: Types.ObjectId;
   driverId?: Types.ObjectId;
 
-  myPay: Types.ObjectId;
+  myPay?: Types.ObjectId;
   reciverPay: Types.ObjectId;
 
   pickupLocation: ILocation;

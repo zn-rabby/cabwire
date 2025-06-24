@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { StatusCodes } from 'http-status-codes';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { PackageService } from './package.service';
 import ApiError from '../../../errors/ApiError';
 
@@ -53,6 +53,30 @@ const acceptPackage = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const continuePackage = catchAsync(async (req: Request, res: Response) => {
+  const driverId = req.user?.id;
+  const packageId = req.params.packageId;
+
+  if (!driverId) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      success: false,
+      message: 'Unauthorized',
+    });
+  }
+
+  const updated = await PackageService.continuePackageDeliver(
+    packageId,
+    Types.ObjectId.createFromHexString(driverId)
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Package status updated to continue',
+    data: updated,
+  });
+});
+
 const markAsDelivered = catchAsync(async (req: Request, res: Response) => {
   const driverId = req.user?.id;
   const packageId = req.params.packageId;
@@ -76,6 +100,7 @@ const markAsDelivered = catchAsync(async (req: Request, res: Response) => {
     data: updated,
   });
 });
+
 const requestClosePackage = catchAsync(async (req: Request, res: Response) => {
   const driverId = req.user?.id;
   const rideId = req.params.id;
@@ -94,30 +119,39 @@ const requestClosePackage = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const completePackageeWithOtp = catchAsync(async (req: Request, res: Response) => {
-  const { rideId, otp } = req.body;
+const completePackageeWithOtp = catchAsync(
+  async (req: Request, res: Response) => {
+    const { rideId, otp } = req.body;
 
-  // Validate input
-  if (!rideId || otp === undefined || otp === '') {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID and OTP are required');
+    // Validate input
+    if (!rideId || otp === undefined || otp === '') {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'Ride ID and OTP are required'
+      );
+    }
+
+    // Convert otp to string (don't convert to number)
+    const enteredOtp = otp.toString();
+
+    const ride = await PackageService.completePackageWithOtp(
+      rideId,
+      enteredOtp
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Package delivered successfully',
+      data: ride,
+    });
   }
-
-  // Convert otp to string (don't convert to number)
-  const enteredOtp = otp.toString();
-
-  const ride = await PackageService.completePackageWithOtp(rideId, enteredOtp);
-
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'Package delivered successfully',
-    data: ride,
-  });
-});
+);
 
 export const PackageController = {
   createPackage,
   acceptPackage,
+  continuePackage,
   markAsDelivered,
   requestClosePackage,
   completePackageeWithOtp,

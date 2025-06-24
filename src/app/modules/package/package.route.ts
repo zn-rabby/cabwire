@@ -22,6 +22,12 @@ router.patch(
   PackageController.acceptPackage
 );
 router.patch(
+  '/continue-package/:packageId',
+  auth(USER_ROLES.DRIVER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  PackageController.continuePackage
+);
+
+router.patch(
   '/deliver-package/:packageId',
   auth(USER_ROLES.DRIVER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   PackageController.markAsDelivered
