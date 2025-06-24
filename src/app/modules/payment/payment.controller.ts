@@ -11,15 +11,10 @@ import ApiError from '../../../errors/ApiError';
 
 // controllers/payment.controller.ts
 
-const createRidePayment = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    // ✅ userId from auth
+export const createRidePayment = catchAsync(
+  async (req: Request, res: Response) => {
     const userId = req.user?.id;
-    console.log(22, req.user);
+
     if (!userId) {
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized user');
     }
@@ -29,15 +24,14 @@ const createRidePayment = async (
       userId,
     });
 
-    res.status(201).json({
+    res.status(StatusCodes.CREATED).json({
+      statusCode: StatusCodes.CREATED,
       success: true,
       message: 'Payment created successfully',
       data: payment,
     });
-  } catch (error) {
-    next(error);
   }
-};
+);
 
 const createCabwireOrBookingPayment = async (
   req: Request,

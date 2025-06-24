@@ -184,7 +184,26 @@ const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
     data: ride,
   });
 });
- 
+
+const createRidePayment = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized user');
+  }
+
+  const payment = await RideService.createRidePayment({
+    ...req.body,
+    userId,
+  });
+
+  res.status(StatusCodes.CREATED).json({
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: 'Payment created successfully',
+    data: payment,
+  });
+});
 
 export const RideController = {
   findNearestOnlineRiders,
@@ -194,5 +213,6 @@ export const RideController = {
   cancelRide,
   continueRide,
   requestCloseRide,
-  completeRideWithOtp, 
+  completeRideWithOtp,
+  createRidePayment,
 };

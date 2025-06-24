@@ -62,6 +62,11 @@ router.post(
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
   RideController.completeRideWithOtp
 );
- 
+
+router.post(
+  '/ride-payment',
+  auth(USER_ROLES.USER, USER_ROLES.DRIVER, USER_ROLES.ADMIN),
+  RideController.createRidePayment
+);
 
 export const RideRoutes = router;

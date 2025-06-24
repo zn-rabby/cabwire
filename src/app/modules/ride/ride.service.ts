@@ -1,8 +1,8 @@
-import { IRide } from './ride.interface';
+import { IRide, PaymentStatus } from './ride.interface';
 import { Ride } from './ride.model';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
-import { Types } from 'mongoose';
+import { isValidObjectId, Types } from 'mongoose';
 import { Category } from '../category/category.model';
 import { Service } from '../service/service.model';
 import { calculateFare } from './ride.utils';
@@ -10,6 +10,9 @@ import { User } from '../user/user.model';
 import generateOTP from '../../../util/generateOTP';
 import { calculateDistance } from '../../../util/calculateDistance';
 import { sendNotifications } from '../../../util/notificaton';
+import { IPayment } from '../payment/payment.interface';
+import stripe from '../../../config/stripe';
+import { Payment } from '../payment/payment.model';
 
 // find nearest riders
 export const findNearestOnlineRiders = async (location: {
@@ -225,7 +228,7 @@ const acceptRide = async (rideId: string, driverId: string) => {
   }
   return updatedRide;
 };
- 
+
 // cancel ride
 const cancelRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
@@ -396,6 +399,127 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
   return updatedRide;
 };
 
+const createRidePayment = async (payload: Partial<IPayment>) => {
+  const { rideId, userId, adminId } = payload;
+
+  // ✅ Validate input
+  if (!rideId || !isValidObjectId(rideId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid rideId is required');
+  }
+
+  if (!userId || !isValidObjectId(userId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid userId is required');
+  }
+
+  if (!adminId || !isValidObjectId(adminId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid adminId is required');
+  }
+
+  // ✅ Fetch ride
+  const ride = await Ride.findById(rideId);
+
+  if (!ride) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
+  }
+
+  const amount = ride.fare;
+  const driverId = ride.driverId;
+  const method = ride.paymentMethod; // get from Ride model
+
+  if (!method || !['stripe', 'offline'].includes(method)) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid payment method in ride'
+    );
+  }
+
+  if (!driverId || !isValidObjectId(driverId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Driver info missing in ride');
+  }
+
+  if (!amount || amount <= 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare amount');
+  }
+
+  // ✅ Split amount
+  const adminAmount = +(amount * 0.1).toFixed(2);
+  const driverAmount = +(amount * 0.9).toFixed(2);
+
+  // ✅ Initialize payment fields
+  let paymentStatus: PaymentStatus = 'paid';
+  let transactionId: string | undefined;
+  let stripeSessionUrl: string | undefined;
+
+  if (method === 'stripe') {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Ride Fare',
+              description: `Payment for ride ID: ${rideId}`,
+            },
+            unit_amount: Math.round(amount * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: 'https://re-cycle-mart-client.vercel.app/success',
+      cancel_url: 'https://re-cycle-mart-client.vercel.app/cancelled',
+      metadata: {
+        rideId: rideId.toString(),
+        userId: userId.toString(),
+        method,
+        amount: amount.toString(),
+      },
+    });
+
+    stripeSessionUrl = session.url ?? undefined;
+    transactionId = session.id;
+    paymentStatus = 'paid'; // Will confirm later from Stripe webhook
+  } else {
+    paymentStatus = 'paid';
+    transactionId = `offline_txn_${Date.now()}`;
+  }
+
+  // ✅ Create payment entry
+  const payment = await Payment.create({
+    rideId,
+    userId,
+    method,
+    status: paymentStatus,
+    amount,
+    transactionId,
+    sessionUrl: stripeSessionUrl,
+    paidAt: paymentStatus === 'paid' ? new Date() : undefined,
+    adminId,
+    driverId,
+    adminAmount,
+    driverAmount,
+  });
+
+  if (!payment) {
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Payment creation failed'
+    );
+  }
+
+  // ✅ Update Ride.paymentStatus if payment is already paid
+  if (paymentStatus === 'paid') {
+    ride.paymentStatus = 'paid';
+    await ride.save();
+  }
+
+  return {
+    payment,
+    redirectUrl: stripeSessionUrl,
+  };
+};
+
 export const RideService = {
   findNearestOnlineRiders,
   updateDriverLocation,
@@ -405,4 +529,5 @@ export const RideService = {
   continueRide,
   requestCloseRide,
   completeRideWithOtp,
+  createRidePayment,
 };
