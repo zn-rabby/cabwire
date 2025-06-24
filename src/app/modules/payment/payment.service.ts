@@ -5,7 +5,6 @@ import { StatusCodes } from 'http-status-codes';
 import { isValidObjectId } from 'mongoose';
 import Stripe from 'stripe';
 import config from '../../../config';
-import { Ride } from '../ride/ride.model';
 import { User } from '../user/user.model';
 import { JwtPayload } from 'jsonwebtoken';
 import { CabwireModel } from '../cabwire/cabwire.model';
@@ -13,12 +12,8 @@ import { RideBooking } from '../booking/booking.model';
 import { PackageModel } from '../package/package.model';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
-import { PaymentStatus } from '../ride/ride.interface';
 
 const stripe = new Stripe(config.stripe_secret_key as string);
-// // const YOUR_DOMAIN = '10.0.70.163:5005'; // replace in production
-
-
 
 export async function createOrGetStripeAccount(
   userId: string
@@ -50,7 +45,6 @@ export async function createOrGetStripeAccount(
 
   return account.id;
 }
-
 
 const createCabwireOrBookingPayment = async (payload: {
   sourceId: string;
@@ -543,7 +537,6 @@ const getTotalRevenue = async () => {
 };
 
 export const PaymentService = {
-  createRidePayment,
   createCabwireOrBookingPayment,
   createPackagePayment,
 

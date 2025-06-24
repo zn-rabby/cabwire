@@ -25,7 +25,6 @@ const paymentSchema = new Schema<IPayment>(
 
     paidAt: { type: Date },
 
-    // 🆕 Added for driver/admin tracking
     driverId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     adminId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     driverAmount: { type: Number, required: true },
