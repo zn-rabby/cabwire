@@ -12,6 +12,7 @@ import { RideBooking } from '../booking/booking.model';
 import { PackageModel } from '../package/package.model';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
+import { PaymentStatus } from '../ride/ride.interface';
 
 const stripe = new Stripe(config.stripe_secret_key as string);
 
@@ -151,45 +152,54 @@ const createCabwireOrBookingPayment = async (payload: {
 };
 
 // payment.service.ts
+
 const createPackagePayment = async (payload: {
   packageId: string;
   userId: string;
-  method: 'stripe' | 'offline';
 }) => {
-  const { packageId, userId, method } = payload;
+  const { packageId, userId } = payload;
 
-  if (!isValidObjectId(packageId) || !isValidObjectId(userId)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid IDs are required');
+  // ✅ Validate input
+  if (!packageId || !isValidObjectId(packageId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid packageId is required');
   }
 
-  if (!['stripe', 'offline'].includes(method)) {
+  if (!userId || !isValidObjectId(userId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid userId is required');
+  }
+
+  // ✅ Fetch package
+  const pkg = await PackageModel.findById(packageId);
+  if (!pkg) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Package not found');
+  }
+
+  const method = pkg.paymentMethod;
+  const fare = pkg.fare;
+  const driverId = pkg.driverId?.toString();
+  const adminId = '683d770e4a6d774b3e65fb8e';
+
+  // ✅ Validate required fields
+  if (!method || !['stripe', 'offline'].includes(method)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
   }
 
-  const pkg = await PackageModel.findById(packageId);
-  if (!pkg) throw new ApiError(StatusCodes.NOT_FOUND, 'Package not found');
+  if (!driverId || !isValidObjectId(driverId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Driver ID missing or invalid');
+  }
 
-  const fare = pkg.fare;
-  if (typeof fare !== 'number' || fare <= 0) {
+  if (!fare || fare <= 0) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare in package');
   }
 
-  // Commission calculation
-  const adminId = '683d770e4a6d774b3e65fb8e';
-  const driverId = pkg.driverId?.toString();
-  if (!driverId) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Driver ID is missing in package'
-    );
-  }
+  // ✅ Split amount
+  const adminAmount = +(fare * 0.1).toFixed(2);
+  const driverAmount = +(fare * 0.9).toFixed(2);
 
-  const adminAmount = Number((fare * 0.1).toFixed(2));
-  const driverAmount = Number((fare * 0.9).toFixed(2));
-
-  let transactionId: string | undefined;
+  // ✅ Initialize payment fields
+  let paymentStatus: PaymentStatus = 'paid';
+  let transactionId: string;
   let stripeSessionUrl: string | undefined;
-  let status: 'pending' | 'paid' | 'failed' = 'pending';
 
   if (method === 'stripe') {
     const session = await stripe.checkout.sessions.create({
@@ -201,46 +211,64 @@ const createPackagePayment = async (payload: {
             currency: 'usd',
             product_data: {
               name: 'Package Delivery Payment',
-              description: `Payment for Package ID: ${packageId}`,
+              description: `Payment for package ID: ${packageId}`,
             },
             unit_amount: Math.round(fare * 100),
           },
           quantity: 1,
         },
       ],
-      success_url: 'https://example.com/success',
-      cancel_url: 'https://example.com/cancel',
-      metadata: { packageId, userId, method, sourceType: 'package' },
+      success_url: 'https://re-cycle-mart-client.vercel.app/success',
+      cancel_url: 'https://re-cycle-mart-client.vercel.app/cancelled',
+      metadata: {
+        packageId: packageId.toString(),
+        userId: userId.toString(),
+        method,
+        amount: fare.toString(),
+      },
     });
 
-    transactionId = session.id;
     stripeSessionUrl = session.url ?? undefined;
-    status = 'pending';
+    transactionId = session.id;
+    paymentStatus = 'paid'; // Stripe payment not confirmed yet
   } else {
-    transactionId = `offline_${Date.now()}`;
-    status = 'paid';
+    transactionId = `offline_txn_${Date.now()}`;
+    paymentStatus = 'paid';
+
+    // ✅ update package as paid
+    pkg.paymentStatus = 'paid';
+    await pkg.save();
   }
 
+  // ✅ Create payment entry
   const payment = await Payment.create({
     packageId,
     userId,
     method,
-    status,
+    status: paymentStatus,
     transactionId,
     sessionUrl: stripeSessionUrl,
     amount: fare,
-    paidAt: status === 'paid' ? new Date() : undefined,
+    paidAt: paymentStatus === 'paid' ? new Date() : undefined,
     adminId,
     driverId,
     adminAmount,
     driverAmount,
   });
 
+  if (!payment) {
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Payment creation failed'
+    );
+  }
+
   return {
     payment,
     redirectUrl: stripeSessionUrl,
   };
 };
+
 
 // Generate Stripe onboarding link
 export async function createStripeOnboardingLink(

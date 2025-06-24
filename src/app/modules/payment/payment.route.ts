@@ -25,6 +25,12 @@ router.get('/check-balance', PaymentController.checkStripeBalance);
 
 router.post(
   '/cabwire-payment',
+  auth(
+    USER_ROLES.USER,
+    USER_ROLES.DRIVER,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN
+  ),
   PaymentController.createCabwireOrBookingPayment
 );
 // payment.route.ts or within your main route
