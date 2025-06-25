@@ -148,31 +148,25 @@ const completePackageeWithOtp = catchAsync(
     });
   }
 );
-const createPackagePayment = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const userId = req.user?.id;
-    const { packageId, adminId } = req.body;
+const createPackagePayment = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
 
-    const result = await PackageService.createPackagePayment({
-      packageId,
-      userId,
-      adminId,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: 'Package payment created successfully',
-      data: result,
-    });
-  } catch (error) {
-    next(error);
+  if (!userId) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized user');
   }
-};
 
+  const result = await PackageService.createPackagePayment({
+    ...req.body,
+    userId,
+  });
+
+  res.status(StatusCodes.CREATED).json({
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: 'Package payment created successfully',
+    data: result,
+  });
+});
 export const PackageController = {
   createPackage,
   acceptPackage,

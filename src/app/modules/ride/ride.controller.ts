@@ -193,14 +193,14 @@ const createRidePayment = catchAsync(async (req: Request, res: Response) => {
   }
 
   const payment = await RideService.createRidePayment({
-    ...req.body,
+   
     userId,
   });
 
   res.status(StatusCodes.CREATED).json({
     statusCode: StatusCodes.CREATED,
     success: true,
-    message: 'Payment created successfully',
+    message: 'Ride Payment created successfully',
     data: payment,
   });
 });

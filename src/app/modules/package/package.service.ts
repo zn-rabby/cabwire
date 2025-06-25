@@ -310,6 +310,7 @@ const createPackagePayment = async (payload: {
 }) => {
   const { packageId, userId, adminId } = payload;
 
+  // ✅ Validate IDs
   if (!packageId || !isValidObjectId(packageId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid packageId is required');
   }
@@ -322,15 +323,16 @@ const createPackagePayment = async (payload: {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid adminId is required');
   }
 
+  // ✅ Fetch Package
   const packageDoc = await PackageModel.findById(packageId);
   if (!packageDoc) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Package not found');
   }
 
-  const method = packageDoc.paymentMethod;
   const fare = packageDoc.fare;
-  const driverId = packageDoc.driverId?.toString();
-
+  const driverId = packageDoc.driverId;
+  const method = packageDoc.paymentMethod;
+  
   if (!method || !['stripe', 'offline'].includes(method)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
   }
@@ -353,6 +355,7 @@ const createPackagePayment = async (payload: {
   let transactionId: string;
   let stripeSessionUrl: string | undefined;
 
+  // ✅ Stripe or Offline logic
   if (method === 'stripe') {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -374,7 +377,6 @@ const createPackagePayment = async (payload: {
       cancel_url: 'https://re-cycle-mart-client.vercel.app/cancelled',
       metadata: {
         packageId: packageId.toString(),
-        
         userId: userId.toString(),
         method,
         amount: fare.toString(),
@@ -383,14 +385,13 @@ const createPackagePayment = async (payload: {
 
     stripeSessionUrl = session.url ?? undefined;
     transactionId = session.id;
-    paymentStatus = 'paid'; // Will be updated via webhook ideally
+    paymentStatus = 'paid'; // Will ideally be updated from webhook
   } else {
-    transactionId = `offline_txn_${Date.now()}`;
     paymentStatus = 'paid';
-    packageDoc.paymentStatus = paymentStatus;
-    await packageDoc.save();
+    transactionId = `offline_txn_${Date.now()}`;
   }
 
+  // ✅ Create payment record
   const payment = await Payment.create({
     packageId,
     userId,
@@ -411,6 +412,12 @@ const createPackagePayment = async (payload: {
       StatusCodes.INTERNAL_SERVER_ERROR,
       'Payment creation failed'
     );
+  }
+
+  // ✅ Update Package.paymentStatus
+  if (paymentStatus === 'paid') {
+    packageDoc.paymentStatus = 'paid';
+    await packageDoc.save();
   }
 
   return {

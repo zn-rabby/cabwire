@@ -27,7 +27,7 @@ const packageSchema = new Schema<IPackage>(
 
     packageStatus: {
       type: String,
-      enum: ['requested', 'accepted', 'delivered', 'continue'],
+      enum: ['requested', 'accepted', 'delivered', 'continue', 'completed'],
       default: 'requested',
     },
 
