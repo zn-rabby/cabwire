@@ -301,12 +301,14 @@ const completePackageWithOtp = async (rideId: string, enteredOtp: string) => {
 
   return updatedRide;
 };
+
 // payment.service.ts
 const createPackagePayment = async (payload: {
   packageId: string;
   userId: string;
+  adminId: string;
 }) => {
-  const { packageId, userId } = payload;
+  const { packageId, userId, adminId } = payload;
 
   if (!packageId || !isValidObjectId(packageId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid packageId is required');
@@ -314,6 +316,10 @@ const createPackagePayment = async (payload: {
 
   if (!userId || !isValidObjectId(userId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid userId is required');
+  }
+
+  if (!adminId || !isValidObjectId(adminId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid adminId is required');
   }
 
   const packageDoc = await PackageModel.findById(packageId);
@@ -324,7 +330,6 @@ const createPackagePayment = async (payload: {
   const method = packageDoc.paymentMethod;
   const fare = packageDoc.fare;
   const driverId = packageDoc.driverId?.toString();
-  const adminId = '683d770e4a6d774b3e65fb8e'; // TODO: Optional - move to config/env
 
   if (!method || !['stripe', 'offline'].includes(method)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
@@ -369,6 +374,7 @@ const createPackagePayment = async (payload: {
       cancel_url: 'https://re-cycle-mart-client.vercel.app/cancelled',
       metadata: {
         packageId: packageId.toString(),
+        
         userId: userId.toString(),
         method,
         amount: fare.toString(),
@@ -377,11 +383,11 @@ const createPackagePayment = async (payload: {
 
     stripeSessionUrl = session.url ?? undefined;
     transactionId = session.id;
-    paymentStatus = 'paid'; // Will be confirmed by webhook
+    paymentStatus = 'paid'; // Will be updated via webhook ideally
   } else {
     transactionId = `offline_txn_${Date.now()}`;
     paymentStatus = 'paid';
-    packageDoc.paymentStatus = 'paid';
+    packageDoc.paymentStatus = paymentStatus;
     await packageDoc.save();
   }
 

@@ -5,6 +5,7 @@ import { StatusCodes } from 'http-status-codes';
 import mongoose, { Types } from 'mongoose';
 import { PackageService } from './package.service';
 import ApiError from '../../../errors/ApiError';
+import { PaymentService } from '../payment/payment.service';
 
 const createPackage = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
@@ -154,11 +155,12 @@ const createPackagePayment = async (
 ) => {
   try {
     const userId = req.user?.id;
-    const { packageId } = req.body;
+    const { packageId, adminId } = req.body;
 
     const result = await PackageService.createPackagePayment({
       packageId,
       userId,
+      adminId,
     });
 
     res.status(201).json({
