@@ -105,10 +105,10 @@ const createRideBookingToDB = async (
 const cancelRide = async (rideId: string, driverId: string) => {
   const ride = await CabwireModel.findById(rideId);
 
-  if (!ride || ride.rideStatus !== 'requested') {
+  if (!ride || !['requested', 'accepted'].includes(ride.rideStatus)) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Invalid ride or already cancelled'
+      'Invalid ride or ride status must be requested or accepted'
     );
   }
   // Update status
@@ -131,7 +131,7 @@ const cancelRide = async (rideId: string, driverId: string) => {
 const continueRide = async (rideId: string, driverId: string) => {
   const ride = await CabwireModel.findById(rideId);
 
-  if (!ride || ride.rideStatus !== 'requested') {
+  if (!ride || !['requested', 'accepted'].includes(ride.rideStatus)) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Invalid ride or already continue'

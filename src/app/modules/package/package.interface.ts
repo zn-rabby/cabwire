@@ -1,5 +1,10 @@
 import { Document, Types } from 'mongoose';
-export type packageStatus = 'requested' | 'accepted' | 'delivered' | 'continue';
+export type packageStatus =
+  | 'requested'
+  | 'accepted'
+  | 'delivered'
+  | 'continue'
+  | 'completed';
 export type PaymentMethod = 'stripe' | 'offline';
 export type PaymentStatus = 'pending' | 'paid' | 'failed';
 
