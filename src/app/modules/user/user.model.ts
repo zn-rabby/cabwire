@@ -25,7 +25,7 @@ const driverVehicleSchema = new Schema(
     vehiclesRegistrationNumber: { type: Number },
     vehiclesInsuranceNumber: { type: Number },
     vehiclesPicture: { type: String },
-    vehiclesCategory: { type: String }, // ✅ Fixed from `string` to `String`
+    vehiclesCategory: { type: String },  
   },
   { _id: false }
 );
