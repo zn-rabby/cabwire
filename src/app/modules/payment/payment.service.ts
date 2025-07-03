@@ -10,6 +10,7 @@ import { CabwireModel } from '../cabwire/cabwire.model';
 import { RideBooking } from '../booking/booking.model';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
+import QueryBuilder from '../../builder/QueryBuilder';
 
 const stripe = new Stripe(config.stripe_secret_key as string);
 
@@ -390,9 +391,21 @@ const getStripeBalance = async () => {
 };
 
 // only for dasboard
-const getAllPayments = async () => {
-  const payments = await Payment.find().sort({ createdAt: -1 }); // optional: latest first
-  return payments;
+const getAllPayments = async (query: Record<string, unknown>) => {
+  const paymentQuery = new QueryBuilder(
+    Payment.find().populate('userId', 'name email'), // ✅ Populate user data
+    query
+  )
+    .search(['transactionId', 'email']) // optional searchable fields
+    .filter()
+    .sort('-createdAt') // latest first
+    .paginate()
+    .fields();
+
+  const result = await paymentQuery.modelQuery;
+  const meta = await paymentQuery.countTotal();
+
+  return { meta, result };
 };
 
 const getAllEarninng = async () => {

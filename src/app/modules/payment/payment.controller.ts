@@ -129,10 +129,11 @@ const checkStripeBalance = catchAsync(async (req: Request, res: Response) => {
 
 // only for dashboard
 const getAllPayments = catchAsync(async (req: Request, res: Response) => {
-  const payments = await PaymentService.getAllPayments();
+  const payments = await PaymentService.getAllPayments(req.query);
   res.status(200).json({
     statusCode: 200,
     success: true,
+    // meta: payments.meta,
     message: 'All payments retrieved successfully',
     data: payments,
   });
