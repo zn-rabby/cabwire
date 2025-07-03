@@ -395,7 +395,11 @@ const getAllPayments = async (query: Record<string, unknown>) => {
   const paymentQuery = new QueryBuilder(
     Payment.find()
       .populate('userId', 'name email') // ✅ Populate user info
-      .populate('driverId', 'name email driverLicense.licenseNumber driverVehicles.vehiclesMake'), // ✅ Populate driver info + nested fields
+      .populate('rideId', 'distance duration fare paymentStatus') // ✅ Populate user info
+      .populate(
+        'driverId',
+        'name email driverLicense.licenseNumber driverVehicles.vehiclesMake'
+      ), // ✅ Populate driver info + nested fields
     query
   )
     .search(['transactionId']) // 🔍 Only Payment fields
