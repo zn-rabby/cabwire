@@ -25,7 +25,7 @@ const driverVehicleSchema = new Schema(
     vehiclesRegistrationNumber: { type: Number },
     vehiclesInsuranceNumber: { type: Number },
     vehiclesPicture: { type: String },
-    vehiclesCategory: { type: String },  
+    vehiclesCategory: { type: String },
   },
   { _id: false }
 );
@@ -68,6 +68,7 @@ const userSchema = new Schema<IUser, UserModal>(
       type: String,
       default: 'https://i.ibb.co/z5YHLV9/profile.png',
     },
+    contact: { type: String },
     status: {
       type: String,
       enum: ['active', 'block'],

@@ -6,7 +6,7 @@ export type IService = {
   // category: Types.ObjectId;
   image: string;
   baseFare: number;
-  // status?: 'active' | 'delete';
+  status?: 'active' | 'block';
 };
 
 export type ServiceModel = Model<IService>;

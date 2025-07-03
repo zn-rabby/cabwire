@@ -6,6 +6,7 @@ export interface ICategory {
   basePrice: number;
   ratePerKm?: number;
   ratePerHour?: number;
+  status?: 'active' | 'block';
   isActive: boolean;
   isDeleted: boolean;
 }

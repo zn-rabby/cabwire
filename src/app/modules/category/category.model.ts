@@ -24,6 +24,11 @@ const CategorySchema = new Schema<ICategory>(
       required: true,
       min: 0,
     },
+    status: {
+      type: String,
+      enum: ['active', 'block'],
+      default: 'active',
+    },
     isActive: {
       type: Boolean,
       default: true,

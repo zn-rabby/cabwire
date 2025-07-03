@@ -22,6 +22,11 @@ const serviceSchema = new Schema<IService, ServiceModel>(
       type: Number,
       required: true,
     },
+    status: {
+      type: String,
+      enum: ['active', 'block'],
+      default: 'active',
+    },
     // ratePerKm: {
     //   type: Number,
     //   required: true,
@@ -33,11 +38,6 @@ const serviceSchema = new Schema<IService, ServiceModel>(
     // maxHours: {
     //   type: Number,
     //   required: true,
-    // },
-    // status: {
-    //   type: String,
-    //   enum: ['active', 'delete'],
-    //   default: 'active',
     // },
   },
   {
