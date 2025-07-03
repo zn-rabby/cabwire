@@ -393,12 +393,14 @@ const getStripeBalance = async () => {
 // only for dasboard
 const getAllPayments = async (query: Record<string, unknown>) => {
   const paymentQuery = new QueryBuilder(
-    Payment.find().populate('userId', 'name email'), // ✅ Populate user data
+    Payment.find()
+      .populate('userId', 'name email') // ✅ Populate user info
+      .populate('driverId', 'name email driverLicense.licenseNumber'), // ✅ Populate driver info + nested fields
     query
   )
-    .search(['transactionId', 'email']) // optional searchable fields
+    .search(['transactionId']) // 🔍 Only Payment fields
     .filter()
-    .sort('-createdAt') // latest first
+    .sort('-createdAt') // 🕒 Latest first
     .paginate()
     .fields();
 
