@@ -264,6 +264,16 @@ const driverStatusApproveAll = catchAsync(async (req, res) => {
     data: result,
   });
 });
+const driverStatusRejectAll = catchAsync(async (req, res) => {
+  const result = await UserService.driverStatusApproveAll();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'All requested drivers have been reject successfully',
+    data: result,
+  });
+});
 
 const getAllUserCount = catchAsync(async (req, res) => {
   // const result = await UserService.getAllUserCount();
@@ -322,6 +332,7 @@ export const UserController = {
   getAllResentDriver,
   driverStatusUpdate,
   driverStatusApproveAll,
+  driverStatusRejectAll,
 
   getAllUserCount,
   getAllUserRasio,

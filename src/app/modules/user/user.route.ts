@@ -130,12 +130,17 @@ router.get(
 );
 
 router.patch(
-  '/block-driver/:id',
+  '/driver/:id',
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   UserController.driverStatusUpdate
 );
 router.patch(
-  '/driver-approve',
+  '/approve',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.driverStatusApproveAll
+);
+router.patch(
+  '/reject',
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   UserController.driverStatusApproveAll
 );
