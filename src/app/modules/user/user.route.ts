@@ -134,6 +134,11 @@ router.patch(
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   UserController.driverStatusUpdate
 );
+router.patch(
+  '/driver-approve',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.driverStatusApproveAll
+);
 
 router.get(
   '/all-driver',

@@ -314,6 +314,21 @@ const driverStatusUpdate = async (id: string, payload: Partial<IUser>) => {
   return result;
 };
 
+const driverStatusApproveAll = async (): Promise<any> => {
+  // Approve all DRIVERs whose action is 'request'
+  const result = await User.updateMany(
+    {
+      role: 'DRIVER',
+      action: 'request',
+    },
+    {
+      $set: { action: 'approve' },
+    }
+  );
+
+  return result;
+};
+
 const getAllUserRatio = async (year: number) => {
   const startOfYear = new Date(year, 0, 1); // January 1st of the given year
   const endOfYear = new Date(year + 1, 0, 1); // January 1st of the next year
@@ -383,6 +398,7 @@ export const UserService = {
   getTotalDriverCount,
   getAllResentDriverQuery,
   driverStatusUpdate,
+  driverStatusApproveAll,
 
   getAllUserRatio,
 };
