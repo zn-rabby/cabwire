@@ -265,7 +265,7 @@ const driverStatusApproveAll = catchAsync(async (req, res) => {
   });
 });
 const driverStatusRejectAll = catchAsync(async (req, res) => {
-  const result = await UserService.driverStatusApproveAll();
+  const result = await UserService.driverStatusRejectAll();
 
   sendResponse(res, {
     statusCode: 200,
