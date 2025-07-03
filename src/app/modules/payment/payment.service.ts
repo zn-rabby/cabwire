@@ -395,7 +395,7 @@ const getAllPayments = async (query: Record<string, unknown>) => {
   const paymentQuery = new QueryBuilder(
     Payment.find()
       .populate('userId', 'name email') // ✅ Populate user info
-      .populate('rideId', 'distance duration fare paymentStatus') // ✅ Populate user info
+      .populate('rideId', 'distance duration fare paymentStatus') // ✅ Populate ride info
       .populate(
         'driverId',
         'name email driverLicense.licenseNumber driverVehicles.vehiclesMake'
@@ -403,7 +403,8 @@ const getAllPayments = async (query: Record<string, unknown>) => {
     query
   )
     .search(['transactionId']) // 🔍 Only Payment fields
-    .filter()
+    // .filter() // includes month/year or startDate/endDate filter now
+    .filters() // includes month/year or startDate/endDate filter now
     .sort('-createdAt') // 🕒 Latest first
     .paginate()
     .fields();

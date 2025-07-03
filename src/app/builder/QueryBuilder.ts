@@ -36,6 +36,49 @@ class QueryBuilder<T> {
     this.modelQuery = this.modelQuery.find(queryObj as FilterQuery<T>);
     return this;
   }
+  filters() {
+    const queryObj = { ...this.query };
+    const excludeFields = [
+      'searchTerm',
+      'sort',
+      'page',
+      'limit',
+      'fields',
+      'month',
+      'year',
+      'startDate',
+      'endDate',
+    ];
+    excludeFields.forEach(el => delete queryObj[el]);
+
+    // Date filter logic
+    const createdAtFilter: Record<string, any> = {};
+
+    if (this.query.month && this.query.year) {
+      const month = Number(this.query.month);
+      const year = Number(this.query.year);
+
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+
+      createdAtFilter.$gte = startDate;
+      createdAtFilter.$lte = endDate;
+    } else {
+      if (this.query.startDate) {
+        createdAtFilter.$gte = new Date(this.query.startDate as string);
+      }
+      if (this.query.endDate) {
+        createdAtFilter.$lte = new Date(this.query.endDate as string);
+      }
+    }
+
+    if (Object.keys(createdAtFilter).length > 0) {
+      (queryObj as any).createdAt = createdAtFilter;
+    }
+
+    this.modelQuery = this.modelQuery.find(queryObj as FilterQuery<T>);
+    return this;
+  }
 
   //sorting
   sort(p0: string) {
