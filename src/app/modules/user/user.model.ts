@@ -74,6 +74,11 @@ const userSchema = new Schema<IUser, UserModal>(
       enum: ['active', 'block'],
       default: 'active',
     },
+    action: {
+      type: String,
+      enum: ['request', 'approve', 'reject'],
+      default: 'request',
+    },
     stripeAccountId: { type: String },
     verified: { type: Boolean, default: false },
     driverLicense: { type: driverLicenseSchema },

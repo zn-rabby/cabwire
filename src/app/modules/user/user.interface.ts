@@ -29,6 +29,7 @@ export type IUser = {
   };
   image?: string;
   status?: 'active' | 'block';
+  action?: 'request' | 'approve' | 'reject';
   verified: boolean;
   authentication?: {
     isResetPassword: boolean;

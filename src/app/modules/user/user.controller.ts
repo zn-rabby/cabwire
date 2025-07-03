@@ -204,7 +204,18 @@ const getAllDriver = catchAsync(async (req, res) => {
     statusCode: httpStatus.OK,
     meta: result.meta,
     data: result.result,
-    message: 'Users Driver are requered successful!!',
+    message: 'Drivers fetched successfully!',
+  });
+});
+const getAllDriverRequest = catchAsync(async (req, res) => {
+  const result = await UserService.getAllDriverRequest(req.query);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    meta: result.meta,
+    data: result.result,
+    message: 'Drivers fetched successfully!',
   });
 });
 const getTotalDriverCount = catchAsync(async (req, res) => {
@@ -295,6 +306,7 @@ export const UserController = {
   userStatusUpdate,
   // driver
   getAllDriver,
+  getAllDriverRequest,
   getTotalDriverCount,
   getAllResentDriver,
   driverStatusUpdate,

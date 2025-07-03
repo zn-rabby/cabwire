@@ -239,6 +239,24 @@ const userStatusUpdate = async (id: string, payload: Partial<IUser>) => {
 const getAllDriverQuery = async (query: Record<string, unknown>) => {
   const filters: Record<string, unknown> = {
     role: { $in: [USER_ROLES.DRIVER] },
+    action: 'approve', // Only approved drivers
+  };
+
+  const userQuery = new QueryBuilder(User.find(filters), query)
+    .search(['name', 'email']) // Optional searchable fields
+    .filter()
+    // .sort()
+    .paginate()
+    .fields();
+
+  const result = await userQuery.modelQuery;
+  const meta = await userQuery.countTotal();
+  return { meta, result };
+};
+const getAllDriverRequest = async (query: Record<string, unknown>) => {
+  const filters: Record<string, unknown> = {
+    role: { $in: [USER_ROLES.DRIVER] },
+    action: 'request', // Only approved drivers
   };
 
   const userQuery = new QueryBuilder(User.find(filters), query)
@@ -361,6 +379,7 @@ export const UserService = {
 
   // driver
   getAllDriverQuery,
+  getAllDriverRequest,
   getTotalDriverCount,
   getAllResentDriverQuery,
   driverStatusUpdate,
