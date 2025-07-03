@@ -27,7 +27,6 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   };
   const createAccountTemplate = emailTemplate.createAccount(values);
   emailHelper.sendEmail(createAccountTemplate);
-
   //save to DB
   const authentication = {
     oneTimeCode: otp,

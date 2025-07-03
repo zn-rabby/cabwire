@@ -1,55 +1,49 @@
-Certainly, Rabby! Below is a **professional, production-ready README.md** tailored for your **CabWire** project, which is being developed for your **company and client**. It includes precise project details, core features, technologies used, setup instructions, and more.
+# 🚖 CabWire – Scalable Ride-Sharing Backend System
+
+**CabWire** is a robust, enterprise-grade backend solution for real-time ride-sharing platforms. Built with TypeScript, Node.js, Express, and MongoDB, it’s designed with scalability, modularity, and security at its core. This backend supports real-time ride booking, live tracking, role-based access control, and integrated communication features — tailored for client delivery and production deployment.
 
 ---
 
-````markdown
-# 🚖 CabWire – Real-Time Ride-Sharing Backend
+## 🔥 Key Features
 
-**CabWire** is a scalable and modular backend solution for a real-time ride-sharing application, built with TypeScript, Node.js, Express, and MongoDB. Designed for high performance, security, and flexibility, this system supports features such as real-time ride booking, location tracking, role-based access, audio calls, and more. Developed for enterprise-level deployment and client delivery.
-
----
-
-## 🔑 Key Features
-
-- **Modular Architecture**: Organized into independent modules (User, Driver, Ride, RideBooking, Payment, Notification, etc.) for maintainability and scalability.
-- **Authentication & Authorization**: Secure login/signup system using JWT and bcrypt. Role-based access for user, driver, and admin.
-- **Ride Booking System**: Real-time ride request, driver acceptance, status updates, and ride progress tracking.
-- **Fare Calculation Engine**: Dynamic pricing based on ride type, distance, and duration.
-- **Location Services**: Real-time tracking and updates using sockets.
-- **Audio Call System**: Integrated WebRTC-ready backend route structure for real-time audio communication.
-- **SMS & Email Notification**: Communication via Twilio/Vonage and NodeMailer for transactional messages.
-- **File Upload & Handling**: Efficient handling of driver/user documents using Multer and `fs`.
-- **Code Quality & Linting**: Standardized formatting and quality with ESLint + Prettier.
-- **Robust Validation**: Safe input validation using Zod and Mongoose schemas.
-- **Logging & Monitoring**: API request logging via Morgan and server log rotation with Winston.
+- 🔌 **Modular Architecture** — Clean separation of concerns across User, Driver, Ride, Payment, and Notification modules.
+- 🔐 **JWT Authentication & Role-based Authorization** — Separate roles for User, Driver, and Admin secured using industry best practices.
+- 📍 **Live Ride Booking & Tracking** — Real-time booking with driver-matching and status updates via Socket.IO.
+- 💰 **Dynamic Fare Engine** — Automatic fare calculation based on ride type, distance, and duration.
+- 📡 **Real-time Communication (WebRTC-ready)** — Placeholder for audio call integration between users and drivers.
+- 📨 **Notification System** — SMS (Twilio/Vonage) and Email (NodeMailer) support for OTP, alerts, and status updates.
+- 📁 **File Uploads** — Secure document/image uploads using Multer with local or cloud storage options.
+- 🛡 **Input Validation** — Strong validation using Zod and Mongoose schemas.
+- 📈 **Advanced Logging & Monitoring** — Winston with daily log rotation, Morgan for API logs.
+- 🧹 **Code Quality Tools** — ESLint, Prettier, and optional Husky for Git hooks.
 
 ---
 
-## 🧰 Tech Stack
+## 🛠 Tech Stack
 
-- **Runtime**: Node.js
-- **Language**: TypeScript
-- **Framework**: Express.js
-- **Database**: MongoDB + Mongoose
-- **Authentication**: JWT + Bcrypt
-- **Validation**: Zod + Mongoose
-- **Email Service**: NodeMailer
-- **File Upload**: Multer
-- **Logger**: Winston + DailyRotateFile + Morgan
-- **Sockets**: Socket.IO (for real-time communication)
-- **Others**: ESLint, Prettier, dotenv
+| Layer           | Tool / Library          |
+| --------------- | ----------------------- |
+| **Language**    | TypeScript              |
+| **Runtime**     | Node.js                 |
+| **Framework**   | Express.js              |
+| **Database**    | MongoDB + Mongoose      |
+| **Auth**        | JWT + Bcrypt            |
+| **Validation**  | Zod + Mongoose          |
+| **File Upload** | Multer                  |
+| **Sockets**     | Socket.IO               |
+| **Email**       | NodeMailer              |
+| **Logger**      | Winston + Morgan        |
+| **Dev Tools**   | ESLint, Prettier, Husky |
 
 ---
 
 ## 🚀 Getting Started
 
-Follow these steps to set up and run the CabWire backend locally:
-
 ### ✅ Prerequisites
 
-Make sure you have installed:
+Ensure the following are installed:
 
-- Node.js (v18 or higher)
+- Node.js (v18+)
 - npm or yarn
 - MongoDB (local or cloud)
 
@@ -57,11 +51,12 @@ Make sure you have installed:
 
 ### 📦 Installation
 
-1. **Clone the repository**  
+1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourcompany/cabwire-backend.git
    cd cabwire-backend
-````
+   ```
 
 2. **Install dependencies**
 
@@ -71,25 +66,24 @@ Make sure you have installed:
    yarn install
    ```
 
-3. **Create a `.env` file** in the root directory:
+3. **Environment setup**
+
+   Create a `.env` file in the root directory:
 
    ```env
-   # Environment
    NODE_ENV=development
    PORT=5000
-   IP_ADDRESS=192.0.0.0
+   IP_ADDRESS=0.0.0.0
 
    # Database
    DATABASE_URL=mongodb://127.0.0.1:27017/cabwire
 
-   # Bcrypt
+   # Security
    BCRYPT_SALT_ROUNDS=12
-
-   # JWT
    JWT_SECRET=your_jwt_secret
    JWT_EXPIRE_IN=1d
 
-   # Email (NodeMailer)
+   # Email
    EMAIL_FROM=your-email@gmail.com
    EMAIL_USER=your-email@gmail.com
    EMAIL_PASS=your-app-password
@@ -97,7 +91,7 @@ Make sure you have installed:
    EMAIL_HOST=smtp.gmail.com
    ```
 
-4. **Start the development server**
+4. **Run the development server**
 
    ```bash
    npm run dev
@@ -107,9 +101,9 @@ Make sure you have installed:
 
 ---
 
-## 🧪 Running Tests
+## 🧪 Testing
 
-Run automated tests using:
+To run the unit tests:
 
 ```bash
 npm test
@@ -119,51 +113,53 @@ npm test
 
 ## 🗂 Project Modules
 
-| Module       | Description                                              |
-| ------------ | -------------------------------------------------------- |
-| User         | Registration, login, profile management                  |
-| Driver       | Driver verification, availability, ride handling         |
-| Ride         | Ride types, status flow, fare engine                     |
-| Ride Booking | Passenger requests & driver acceptance flow              |
-| Payment      | Stripe/Manual payment logic (upcoming)                   |
-| Notification | Email, SMS, push notifications                           |
-| Chat/Call    | WebRTC-ready route placeholders (for future integration) |
-| Admin Panel  | Overview of users, drivers, and bookings                 |
+| Module           | Responsibility                                                |
+| ---------------- | ------------------------------------------------------------- |
+| **User**         | Registration, login, profile management                       |
+| **Driver**       | Verification, availability status, ride handling              |
+| **Ride**         | Ride types, status flow, fare calculation                     |
+| **RideBooking**  | Request and accept rides with real-time status updates        |
+| **Payment**      | Stripe/manual payment logic (upcoming)                        |
+| **Notification** | Email and SMS alerts, future push notification support        |
+| **Chat/Call**    | WebRTC-ready endpoints for future real-time audio integration |
+| **Admin Panel**  | User, driver, ride, and system management                     |
 
 ---
 
-## 🛡 Code Quality
+## 🛡 Code Quality & Standards
 
-* **Linting**: `npm run lint`
-* **Formatting**: `npm run format`
-* **Pre-commit Hooks**: Configure with Husky (recommended for production teams)
+- **Linting**:
+  ```bash
+  npm run lint
+  ```
+- **Formatting**:
+  ```bash
+  npm run format
+  ```
+- **Git Hooks (optional)**:  
+  Set up Husky to enforce linting/prettier pre-commit.
 
 ---
 
-## 👨‍💻 Contribution
+## 🤝 Contribution Guidelines
 
-This is a company-level project. Please follow the internal Git flow and commit naming conventions. All PRs must be reviewed before merging to `main`.
+> 🚫 This is a client-facing, company-level project.  
+> All contributors must follow the internal Git flow, use semantic commits, and submit PRs for review before merging into `main`.
 
 ---
 
 ## 📄 License
 
-This project is proprietary and developed under \[Your Company Name]. Not to be distributed or reused without permission.
+**Private Repository – All rights reserved.**  
+© [Your Company Name]. Unauthorized use, reproduction, or distribution is prohibited.
 
 ---
 
-## 🤝 Contact
+## 📬 Contact
 
-For business inquiries or project-related communication:
-
-**Company:** Your Company Name
-**Developer:** Zulkar Naeem Rabby
-**Email:** [rabby@example.com](mailto:rabby@example.com)
-**Project Repo:** [GitHub](https://github.com/yourcompany/cabwire-backend)
+**Company:** Your Company Name  
+**Developer:** Zulkar Naeem Rabby  
+**Email:** [rabby@example.com](mailto:rabby@example.com)  
+**GitHub Repo:** [github.com/yourcompany/cabwire-backend](https://github.com/yourcompany/cabwire-backend)
 
 ---
-
-```
-
-Let me know if you want this README in Bangla as well or want it exported as a `.md` or PDF file.
-```
