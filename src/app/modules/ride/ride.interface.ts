@@ -32,7 +32,7 @@ export interface IRide extends Document {
   duration?: number;
   fare?: number;
 
-  rideStatus: RideStatus;
+  rideStatus?: RideStatus;
 
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;

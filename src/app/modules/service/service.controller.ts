@@ -3,20 +3,22 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { ServiceServices } from './service.service';
+import { createLogger } from 'winston';
 
 const createService = catchAsync(async (req: Request, res: Response) => {
-  const serviceData = req.body;
+  const { ...serviceData } = req.body;
+  console.log(req.body);
+  // let image = '';
+  // const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  // const serviceImage = files?.image?.[0];
+  // if (serviceImage) {
+  //   image = `/uploads/image/${serviceImage.filename}`;
+  // }
+  // const data = {
+  //   ...serviceData,
+  // };
 
-  let image = '';
-  if (req.files && 'image' in req.files && req.files.image[0]) {
-    image = `/images/${req.files.image[0].filename}`;
-  }
-  const data = {
-    ...serviceData,
-    image,
-  };
-
-  const result = await ServiceServices.createServiceToDB(data);
+  const result = await ServiceServices.createServiceToDB(serviceData);
 
   sendResponse(res, {
     success: true,
@@ -50,18 +52,18 @@ const getSingleService = catchAsync(async (req: Request, res: Response) => {
 
 const updateService = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id;
-  const updateServiceData = req.body; 
+  const updateServiceData = req.body;
 
-  let image;
-  if (req.files && 'image' in req.files && req.files.image[0]) {
-    image = `/images/${req.files.image[0].filename}`;
-  }
-  const data = {
-    ...updateServiceData,
-    image,
-  };
+  // let image;
+  // if (req.files && 'image' in req.files && req.files.image[0]) {
+  //   image = `/uploads/image/${req.files.image[0].filename}`;
+  // }
+  // const data = {
+  //   ...updateServiceData,
+  //   image,
+  // };
 
-  const result = await ServiceServices.updateServiceToDB(id, data);
+  const result = await ServiceServices.updateServiceToDB(id, updateServiceData);
 
   sendResponse(res, {
     success: true,

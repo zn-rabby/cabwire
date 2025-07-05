@@ -16,6 +16,7 @@ const serviceSchema = new Schema<IService, ServiceModel>(
     // },
     image: {
       type: String,
+      default: '',
       required: true,
     },
     baseFare: {
