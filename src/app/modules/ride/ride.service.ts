@@ -238,13 +238,15 @@ const cancelRide = async (rideId: string, driverId: string) => {
   }
 
   // Allow cancellation only if ride is in 'requested' or 'accepted' status
-  if (!['requested', 'accepted'].includes(ride.rideStatus)) {
+  if (
+    !ride.rideStatus ||
+    !['requested', 'accepted'].includes(ride.rideStatus)
+  ) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       `Ride cannot be cancelled in '${ride.rideStatus}' status`
     );
   }
-
   // Update status to 'cancelled'
   ride.rideStatus = 'cancelled';
   await ride.save();

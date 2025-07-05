@@ -37,5 +37,14 @@ router
     // auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     CategoryController.deleteCategory
   );
+router
+  .route('/status/:id')
+
+  .patch(
+    // auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    // fileUploadHandler(),
+    // parseFileData('image'),
+    CategoryController.updateCategory
+  );
 
 export const CategoryRoutes = router;

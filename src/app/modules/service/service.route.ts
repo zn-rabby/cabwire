@@ -32,6 +32,12 @@ router
     ServiceController.deleteService
   );
 
+router.route('/status/:id').patch(
+  // fileUploadHandler(),
+  // parseFileData('image'),
+  ServiceController.updateService
+);
+
 router.get(
   '/',
   // auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),

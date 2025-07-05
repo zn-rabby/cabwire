@@ -53,7 +53,24 @@ const getSingleServiceFromDB = async (
 };
 
 const updateServiceToDB = async (id: string, payload: IService) => {
-  const isExistService: any = await Service.findById(id); 
+  const isExistService: any = await Service.findById(id);
+
+  if (!isExistService) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Service doesn't exist");
+  }
+
+  if (payload.image) {
+    unlinkFile(isExistService?.image);
+  }
+
+  const updateService = await Service.findOneAndUpdate({ _id: id }, payload, {
+    new: true,
+  });
+
+  return updateService;
+};
+const updateServiceStatusToDB = async (id: string, payload: IService) => {
+  const isExistService: any = await Service.findById(id);
 
   if (!isExistService) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Service doesn't exist");
@@ -96,6 +113,7 @@ export const ServiceServices = {
   getServicesFromDB,
   getSingleServiceFromDB,
   updateServiceToDB,
+  updateServiceStatusToDB,
   deleteServiceToDB,
   getServiceByCategoryFromDB,
 };
