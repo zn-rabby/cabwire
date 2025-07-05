@@ -8,17 +8,17 @@ import ApiError from '../../../errors/ApiError';
 
 // Create Category
 const createCategory = catchAsync(async (req: Request, res: Response) => {
-  const categoryData = req.body;
+  const { ...categoryData } = req.body;
 
-  let image = '';
-  if (req.files && 'image' in req.files && req.files.image[0]) {
-    image = `/images/${req.files.image[0].filename}`;
-  }
-  const data = {
-    ...categoryData,
-    image,
-  };
-  const result = await CategoryServices.createCategoryToDB(data);
+  // let image = '';
+  // if (req.files && 'image' in req.files && req.files.image[0]) {
+  //   image = `/images/${req.files.image[0].filename}`;
+  // }
+  // const data = {
+  //   ...categoryData,
+  //   image,
+  // };
+  const result = await CategoryServices.createCategoryToDB(categoryData);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -62,16 +62,16 @@ const updateCategory = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const updateData = req.body;
 
-  let image;
-  if (req.files && 'image' in req.files && req.files.image[0]) {
-    image = `/images/${req.files.image[0].filename}`;
-  }
-  const data = {
-    ...updateData,
-    image,
-  };
+  // let image;
+  // if (req.files && 'image' in req.files && req.files.image[0]) {
+  //   image = `/images/${req.files.image[0].filename}`;
+  // }
+  // const data = {
+  //   ...updateData,
+  //   image,
+  // };
 
-  const result = await CategoryServices.updateCategoryToDB(id, data);
+  const result = await CategoryServices.updateCategoryToDB(id, updateData);
 
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Failed to update category');

@@ -4,6 +4,7 @@ import { USER_ROLES } from '../../../enums/user';
 import { CategoryController } from './category.controller';
 import validateRequest from '../../middlewares/validateRequest';
 import fileUploadHandler from '../../middlewares/fileUploadHandler';
+import parseFileData from '../../middlewares/parseFileData';
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ router
   .post(
     // auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     fileUploadHandler(),
+    parseFileData('image'),
     CategoryController.createCategory
   )
   .get(
@@ -28,6 +30,7 @@ router
   .patch(
     // auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     fileUploadHandler(),
+    parseFileData('image'),
     CategoryController.updateCategory
   )
   .delete(
