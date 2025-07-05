@@ -53,7 +53,7 @@ const getSingleServiceFromDB = async (
 };
 
 const updateServiceToDB = async (id: string, payload: IService) => {
-  const isExistService: any = await Service.findById(id);
+  const isExistService: any = await Service.findById(id); 
 
   if (!isExistService) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Service doesn't exist");

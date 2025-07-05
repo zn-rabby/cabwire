@@ -50,7 +50,7 @@ const getSingleService = catchAsync(async (req: Request, res: Response) => {
 
 const updateService = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id;
-  const updateServiceData = req.body;
+  const updateServiceData = req.body; 
 
   let image;
   if (req.files && 'image' in req.files && req.files.image[0]) {
