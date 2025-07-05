@@ -8,6 +8,11 @@ const CategorySchema = new Schema<ICategory>(
       type: String,
       enum: ['economy', 'premium', 'luxury'],
       required: true,
+      unique: true,
+    },
+    image: {
+      type: String,
+      required: true,
     },
     basePrice: {
       type: Number,

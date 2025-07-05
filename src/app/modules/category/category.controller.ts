@@ -9,7 +9,16 @@ import ApiError from '../../../errors/ApiError';
 // Create Category
 const createCategory = catchAsync(async (req: Request, res: Response) => {
   const categoryData = req.body;
-  const result = await CategoryServices.createCategoryToDB(categoryData);
+
+  let image = '';
+  if (req.files && 'image' in req.files && req.files.image[0]) {
+    image = `/images/${req.files.image[0].filename}`;
+  }
+  const data = {
+    ...categoryData,
+    image,
+  };
+  const result = await CategoryServices.createCategoryToDB(data);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -53,7 +62,16 @@ const updateCategory = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const updateData = req.body;
 
-  const result = await CategoryServices.updateCategoryToDB(id, updateData);
+  let image;
+  if (req.files && 'image' in req.files && req.files.image[0]) {
+    image = `/images/${req.files.image[0].filename}`;
+  }
+  const data = {
+    ...updateData,
+    image,
+  };
+
+  const result = await CategoryServices.updateCategoryToDB(id, data);
 
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Failed to update category');

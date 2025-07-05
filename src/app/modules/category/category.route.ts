@@ -3,6 +3,7 @@ import auth from '../../middlewares/auth';
 import { USER_ROLES } from '../../../enums/user';
 import { CategoryController } from './category.controller';
 import validateRequest from '../../middlewares/validateRequest';
+import fileUploadHandler from '../../middlewares/fileUploadHandler';
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ router
   .route('/')
   .post(
     // auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    fileUploadHandler(),
     CategoryController.createCategory
   )
   .get(
@@ -25,6 +27,7 @@ router
   )
   .patch(
     // auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    fileUploadHandler(),
     CategoryController.updateCategory
   )
   .delete(
