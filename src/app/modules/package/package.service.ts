@@ -74,7 +74,7 @@ const createPackageToDB = async (
     );
   }
 
-  // 🔔 Send socket notifications to each driver
+  // Send socket notifications to each driver
 
   if (createdPackage._id && io) {
     nearestDrivers.forEach(driver => {
