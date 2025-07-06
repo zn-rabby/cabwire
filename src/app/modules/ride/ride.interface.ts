@@ -50,7 +50,5 @@ export interface IRide extends Document {
   updatedAt?: Date;
 }
 
-
 // TODO: Add validation
 // FIXME: This doesn't work on Safari
-//  
