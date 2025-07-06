@@ -46,6 +46,8 @@ export interface IRide extends Document {
   rating?: number;
   totalRating?: number;
 
+  rejectedDrivers?: Types.ObjectId[];
+
   createdAt?: Date;
   updatedAt?: Date;
 }

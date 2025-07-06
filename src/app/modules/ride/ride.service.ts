@@ -231,6 +231,39 @@ const acceptRide = async (rideId: string, driverId: string) => {
 };
 
 // cancel ride
+// const cancelRide = async (rideId: string, driverId: string) => {
+//   const ride = await Ride.findById(rideId);
+
+//   if (!ride) {
+//     throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
+//   }
+
+//   // Allow cancellation only if ride is in 'requested' or 'accepted' status
+//   if (
+//     !ride.rideStatus ||
+//     !['requested', 'accepted'].includes(ride.rideStatus)
+//   ) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       `Ride cannot be cancelled in '${ride.rideStatus}' status`
+//     );
+//   }
+
+//   // Update status to 'cancelled'
+//   ride.rideStatus = 'cancelled';
+//   await ride.save();
+
+//   // Emit socket notification to user
+//   sendNotifications({
+//     receiver: ride.userId,
+//     driverId,
+//     rideId: ride._id,
+//     text: 'Your ride has been cancelled by the driver.',
+//   });
+
+//   return ride;
+// };
+
 const cancelRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
 
@@ -238,30 +271,41 @@ const cancelRide = async (rideId: string, driverId: string) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
   }
 
-  // Allow cancellation only if ride is in 'requested' or 'accepted' status
-  if (
-    !ride.rideStatus ||
-    !['requested', 'accepted'].includes(ride.rideStatus)
-  ) {
+  if (ride.rideStatus !== 'requested') {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      `Ride cannot be cancelled in '${ride.rideStatus}' status`
+      `Only 'requested' rides can be rejected`
     );
   }
-  // Update status to 'cancelled'
-  ride.rideStatus = 'cancelled';
-  await ride.save();
 
-  // Emit ride-cancelled notification
-  if (ride._id) {
-    sendNotifications({
-      receiver: ride._id,
-      driverId,
-      text: 'Ride cancelled successfully',
-    });
+  // Push current driverId to rejectedDrivers list
+  if (!ride.rejectedDrivers) {
+    ride.rejectedDrivers = [];
   }
 
-  return ride;
+  const objectIdDriver = new Types.ObjectId(driverId);
+  const alreadyRejected = ride.rejectedDrivers.some(id =>
+    id.equals(objectIdDriver)
+  );
+
+  if (!alreadyRejected) {
+    ride.rejectedDrivers.push(objectIdDriver);
+    await ride.save();
+  }
+
+  // Notify user that driver rejected
+  sendNotifications({
+    receiver: ride.userId,
+    driverId,
+    rideId: ride._id,
+    text: 'A driver has rejected your ride request.',
+    event: 'ride-rejected',
+  });
+
+  return {
+    message: 'Ride rejected by this driver. Still visible to others.',
+    rideId: ride._id,
+  };
 };
 
 // continue ride

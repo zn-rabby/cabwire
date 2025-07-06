@@ -55,6 +55,9 @@ const rideSchema = new Schema<IRide>(
     //   enum: ['Car', 'EmergencyCar', 'RentalCar'],
     //   default: 'Car',
     // },
+    rejectedDrivers: [
+      { type: Schema.Types.ObjectId, ref: 'User', index: true },
+    ],
 
     otp: { type: Number, select: false },
     paymentID: String,
