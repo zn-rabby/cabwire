@@ -36,7 +36,7 @@ export interface IRide extends Document {
 
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
-  rideType: RideType;
+  // rideType: RideType;
 
   otp?: Number;
   paymentID?: string;
@@ -49,6 +49,3 @@ export interface IRide extends Document {
   createdAt?: Date;
   updatedAt?: Date;
 }
-
-// TODO: Add validation
-// FIXME: This doesn't work on Safari

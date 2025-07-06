@@ -221,7 +221,8 @@ const acceptRide = async (rideId: string, driverId: string) => {
   }
   if (updatedRide._id) {
     sendNotifications({
-      receiver: updatedRide._id,
+      // receiver: updatedRide._id,
+      receiver: updatedRide.userId,
       driverId,
       text: 'Ride accept successsfully',
     });

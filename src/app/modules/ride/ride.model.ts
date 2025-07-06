@@ -50,11 +50,11 @@ const rideSchema = new Schema<IRide>(
       enum: ['pending', 'paid', 'failed'],
       default: 'pending',
     },
-    rideType: {
-      type: String,
-      enum: ['Car', 'EmergencyCar', 'RentalCar'],
-      default: 'Car',
-    },
+    // rideType: {
+    //   type: String,
+    //   enum: ['Car', 'EmergencyCar', 'RentalCar'],
+    //   default: 'Car',
+    // },
 
     otp: { type: Number, select: false },
     paymentID: String,
