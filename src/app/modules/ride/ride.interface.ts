@@ -49,3 +49,8 @@ export interface IRide extends Document {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+
+// TODO: Add validation
+// FIXME: This doesn't work on Safari
+//  
