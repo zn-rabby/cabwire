@@ -643,6 +643,28 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
   if (paymentStatus === 'paid') {
     ride.paymentStatus = 'paid';
     await ride.save();
+
+    // ✅ Update Driver Stats
+    await User.findByIdAndUpdate(driverId, {
+      $inc: {
+        driverTotalEarn: driverAmount,
+      },
+    });
+
+    // ✅ Update Admin Stats
+    await User.updateOne(
+      { role: 'admin' },
+      { $inc: { adminRevenue: adminAmount } },
+      { sort: { createdAt: 1 } }
+    );
+
+    // ✅ Update User Stats
+    await User.findByIdAndUpdate(userId, {
+      $inc: {
+        totalAmountSpend: amount,
+        totalTrip: 1,
+      },
+    });
   }
 
   return {
@@ -650,6 +672,7 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
     redirectUrl: stripeSessionUrl,
   };
 };
+
 export const RideService = {
   findNearestOnlineRiders,
   updateDriverLocation,
