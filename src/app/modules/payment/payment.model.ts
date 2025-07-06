@@ -26,7 +26,7 @@ const paymentSchema = new Schema<IPayment>(
     paidAt: { type: Date },
 
     driverId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    adminId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    adminId: { type: Schema.Types.ObjectId, ref: 'User' },
     driverAmount: { type: Number, required: true },
     adminAmount: { type: Number, required: true },
   },

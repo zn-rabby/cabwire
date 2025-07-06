@@ -41,6 +41,10 @@ export type IUser = {
   stripeAccountId?: string;
   driverLicense?: IDriverLicenseInfo;
   driverVehicles?: IDriverVehiclesInfo;
+  driverTotalEarn?: number;
+  adminRevenue?: number;
+  totalTrip?: number;
+  totalAmountSpend?: number;
   isOnline: boolean;
   isDeleted: boolean;
 };
