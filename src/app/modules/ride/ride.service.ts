@@ -231,38 +231,7 @@ const acceptRide = async (rideId: string, driverId: string) => {
 };
 
 // cancel ride
-// const cancelRide = async (rideId: string, driverId: string) => {
-//   const ride = await Ride.findById(rideId);
 
-//   if (!ride) {
-//     throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
-//   }
-
-//   // Allow cancellation only if ride is in 'requested' or 'accepted' status
-//   if (
-//     !ride.rideStatus ||
-//     !['requested', 'accepted'].includes(ride.rideStatus)
-//   ) {
-//     throw new ApiError(
-//       StatusCodes.BAD_REQUEST,
-//       `Ride cannot be cancelled in '${ride.rideStatus}' status`
-//     );
-//   }
-
-//   // Update status to 'cancelled'
-//   ride.rideStatus = 'cancelled';
-//   await ride.save();
-
-//   // Emit socket notification to user
-//   sendNotifications({
-//     receiver: ride.userId,
-//     driverId,
-//     rideId: ride._id,
-//     text: 'Your ride has been cancelled by the driver.',
-//   });
-
-//   return ride;
-// };
 
 const cancelRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
@@ -308,25 +277,27 @@ const cancelRide = async (rideId: string, driverId: string) => {
   };
 };
 
-// continue ride
+// continue rid
 const continueRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
 
   if (!ride || ride.rideStatus !== 'accepted') {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Invalid ride or already continue'
+      'Invalid ride or already continued'
     );
   }
 
   ride.rideStatus = 'continue';
   await ride.save();
 
+  // Notify the rider via socket
   if (ride._id) {
     sendNotifications({
-      receiver: ride._id,
+      receiver: ride.userId, // ✅ corrected
       driverId,
-      text: 'Continue ride successsfully',
+      rideId: ride._id,
+      text: 'Your ride is now in progress.',
     });
   }
 
@@ -431,13 +402,11 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
       'Ride state changed during verification'
     );
   }
-
   // Emit ride-completed event
   if (updatedRide._id) {
     sendNotifications({
-      // event: 'ride-completed',
       rideId: updatedRide._id,
-      receiver: updatedRide._id,
+      receiver: updatedRide.userId,
       text: 'Ride completed successfully',
     });
   }
