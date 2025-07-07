@@ -148,6 +148,7 @@ const completePackageeWithOtp = catchAsync(
     });
   }
 );
+
 const createPackagePayment = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
 
@@ -155,8 +156,14 @@ const createPackagePayment = catchAsync(async (req: Request, res: Response) => {
     throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized user');
   }
 
+  const { packageId } = req.body;
+
+  if (!packageId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'packageId is required');
+  }
+
   const result = await PackageService.createPackagePayment({
-    ...req.body,
+    packageId,
     userId,
   });
 
@@ -167,6 +174,7 @@ const createPackagePayment = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 export const PackageController = {
   createPackage,
   acceptPackage,

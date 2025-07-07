@@ -12,6 +12,7 @@ import {
 import generateOTP from '../../../util/generateOTP';
 import stripe from '../../../config/stripe';
 import { Payment } from '../payment/payment.model';
+import { User } from '../user/user.model';
 
 const createPackageToDB = async (
   payload: Partial<IPackage>,
@@ -302,15 +303,14 @@ const completePackageWithOtp = async (rideId: string, enteredOtp: string) => {
   return updatedRide;
 };
 
-// payment.service.ts
+
 const createPackagePayment = async (payload: {
   packageId: string;
   userId: string;
-  adminId: string;
 }) => {
-  const { packageId, userId, adminId } = payload;
+  const { packageId, userId } = payload;
 
-  // ✅ Validate IDs
+  // Validate input
   if (!packageId || !isValidObjectId(packageId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid packageId is required');
   }
@@ -319,11 +319,7 @@ const createPackagePayment = async (payload: {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid userId is required');
   }
 
-  if (!adminId || !isValidObjectId(adminId)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid adminId is required');
-  }
-
-  // ✅ Fetch Package
+  // Fetch package
   const packageDoc = await PackageModel.findById(packageId);
   if (!packageDoc) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Package not found');
@@ -332,22 +328,20 @@ const createPackagePayment = async (payload: {
   const fare = packageDoc.fare;
   const driverId = packageDoc.driverId;
   const method = packageDoc.paymentMethod;
-  
+
   if (!method || !['stripe', 'offline'].includes(method)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
   }
 
   if (!driverId || !isValidObjectId(driverId)) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Driver ID is missing or invalid'
-    );
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid driverId');
   }
 
   if (!fare || fare <= 0) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare in package');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare');
   }
 
+  // Split amount
   const adminAmount = +(fare * 0.1).toFixed(2);
   const driverAmount = +(fare * 0.9).toFixed(2);
 
@@ -355,7 +349,6 @@ const createPackagePayment = async (payload: {
   let transactionId: string;
   let stripeSessionUrl: string | undefined;
 
-  // ✅ Stripe or Offline logic
   if (method === 'stripe') {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -385,13 +378,13 @@ const createPackagePayment = async (payload: {
 
     stripeSessionUrl = session.url ?? undefined;
     transactionId = session.id;
-    paymentStatus = 'paid'; // Will ideally be updated from webhook
+    paymentStatus = 'paid'; // Later webhook confirm will finalize
   } else {
     paymentStatus = 'paid';
     transactionId = `offline_txn_${Date.now()}`;
   }
 
-  // ✅ Create payment record
+  // Create payment record
   const payment = await Payment.create({
     packageId,
     userId,
@@ -401,7 +394,6 @@ const createPackagePayment = async (payload: {
     sessionUrl: stripeSessionUrl,
     amount: fare,
     paidAt: paymentStatus === 'paid' ? new Date() : undefined,
-    adminId,
     driverId,
     adminAmount,
     driverAmount,
@@ -414,10 +406,36 @@ const createPackagePayment = async (payload: {
     );
   }
 
-  // ✅ Update Package.paymentStatus
+  // Update Package.paymentStatus
   if (paymentStatus === 'paid') {
     packageDoc.paymentStatus = 'paid';
     await packageDoc.save();
+
+    // Update driver stats
+    await User.findByIdAndUpdate(driverId, {
+      $inc: {
+        driverTotalEarn: driverAmount,
+      },
+    });
+
+    // Update admin stats
+    await User.updateOne(
+      { role: 'admin' },
+      {
+        $inc: {
+          adminRevenue: adminAmount,
+        },
+      },
+      { sort: { createdAt: 1 } }
+    );
+
+    // Update user stats
+    await User.findByIdAndUpdate(userId, {
+      $inc: {
+        totalTrip: 1,
+        totalAmountSpend: fare,
+      },
+    });
   }
 
   return {

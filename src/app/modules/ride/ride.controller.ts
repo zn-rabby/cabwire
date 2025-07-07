@@ -185,37 +185,6 @@ const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// const createRidePayment = catchAsync(async (req: Request, res: Response) => {
-//   const userId = req.user?.id;
-
-//   if (!userId) {
-//     throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized user');
-//   }
-
-//   const { rideId, adminId } = req.body;
-
-//   if (!rideId) {
-//     throw new ApiError(StatusCodes.BAD_REQUEST, 'rideId is required');
-//   }
-
-//   if (!adminId) {
-//     throw new ApiError(StatusCodes.BAD_REQUEST, 'adminId is required');
-//   }
-
-//   const payment = await RideService.createRidePayment({
-//     userId,
-//     rideId,
-//     adminId,
-//   });
-
-//   res.status(StatusCodes.CREATED).json({
-//     statusCode: StatusCodes.CREATED,
-//     success: true,
-//     message: 'Ride Payment created successfully',
-//     data: payment,
-//   });
-// });
-
 const createRidePayment = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
 
