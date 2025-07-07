@@ -1,5 +1,5 @@
 import { isValidObjectId, Types } from 'mongoose';
-import { IRideBooking } from './booking.interface';
+import { IRideBooking, PaymentStatus } from './booking.interface';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
 import { RideBooking } from './booking.model';
@@ -288,40 +288,37 @@ const createCabwireOrBookingPayment = async (payload: {
 }) => {
   const { sourceId, userId } = payload;
 
-  // Validate input
+  // Validate IDs
   if (!isValidObjectId(sourceId) || !isValidObjectId(userId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid IDs are required');
   }
 
-  // Fetch Cabwire ride
+  // Fetch ride
   const ride = await CabwireModel.findById(sourceId);
   if (!ride)
     throw new ApiError(StatusCodes.NOT_FOUND, 'Cabwire ride not found');
 
   const fare = ride.fare;
   const driverId = ride.driverId?.toString();
-  const method = ride.paymentMethod;
+  const method = ride.paymentMethod?.toLowerCase();
 
   if (!fare || !driverId || !method) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ride data');
   }
 
   if (!['stripe', 'offline'].includes(method)) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Invalid payment method in ride'
-    );
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
   }
 
   // Calculate shares
-  const driverAmount = parseFloat((fare * 0.9).toFixed(2));
-  const adminAmount = parseFloat((fare * 0.1).toFixed(2));
+  const driverAmount = +(fare * 0.9).toFixed(2);
+  const adminAmount = +(fare * 0.1).toFixed(2);
 
+  let paymentStatus: 'pending' | 'paid' =
+    method === 'offline' ? 'paid' : 'pending';
   let transactionId: string;
   let stripeSessionUrl: string | undefined;
-  let status: 'pending' | 'paid' = method === 'offline' ? 'paid' : 'pending';
 
-  // Handle Stripe
   if (method === 'stripe') {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -339,8 +336,8 @@ const createCabwireOrBookingPayment = async (payload: {
           quantity: 1,
         },
       ],
-      success_url: 'https://example.com/success',
-      cancel_url: 'https://example.com/cancel',
+      success_url: 'https://re-cycle-mart-client.vercel.app/success',
+      cancel_url: 'https://re-cycle-mart-client.vercel.app/cancelled',
       metadata: {
         sourceId,
         userId,
@@ -355,47 +352,42 @@ const createCabwireOrBookingPayment = async (payload: {
     transactionId = `offline_${Date.now()}`;
   }
 
-  // Create payment
+  // Create payment document
   const payment = await Payment.create({
     rideId: sourceId,
     userId,
     driverId,
     method,
-    status,
+    status: paymentStatus,
     transactionId,
     sessionUrl: stripeSessionUrl,
     amount: fare,
     driverAmount,
     adminAmount,
-    paidAt: status === 'paid' ? new Date() : undefined,
+    paidAt: paymentStatus === 'paid' ? new Date() : undefined,
   });
 
-  // If already paid (offline), update all stats
-  console.log(11, status === 'paid');
-  if (status === 'paid') {
-    // Mark ride as paid
+  console.log('🔥 Payment created:', payment._id);
+  console.log('💳 Payment status:', paymentStatus);
+
+  if (paymentStatus === 'paid') {
+    // Update ride status
     ride.paymentStatus = 'paid';
     await ride.save();
 
-    // Update driver
+    // Update driver earnings
     await User.findByIdAndUpdate(driverId, {
-      $inc: {
-        driverTotalEarn: driverAmount,
-      },
+      $inc: { driverTotalEarn: driverAmount },
     });
 
-    // Update admin
+    // Update admin revenue (first created admin)
     await User.updateOne(
       { role: 'admin' },
-      {
-        $inc: {
-          adminRevenue: adminAmount,
-        },
-      },
+      { $inc: { adminRevenue: adminAmount } },
       { sort: { createdAt: 1 } }
     );
 
-    // Update user
+    // Update user stats
     await User.findByIdAndUpdate(userId, {
       $inc: {
         totalAmountSpend: fare,

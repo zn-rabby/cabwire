@@ -1,11 +1,8 @@
 import { Document, Types } from 'mongoose';
-import {
-  RideStatus,
-  PaymentMethod,
-  PaymentStatus,
-} from '../ride/ride.interface';
+import { RideStatus, PaymentMethod } from '../ride/ride.interface';
 import { ILocation } from '../notification/notification.interface';
 
+export type PaymentStatus = 'pending' | 'paid' | 'failed';
 export interface IRideBooking extends Document {
   rideId: Types.ObjectId;
   userId: Types.ObjectId;
