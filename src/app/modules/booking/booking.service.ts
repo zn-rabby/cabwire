@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import { isValidObjectId, Types } from 'mongoose';
 import { IRideBooking } from './booking.interface';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
@@ -7,6 +7,9 @@ import { CabwireModel } from '../cabwire/cabwire.model';
 import { calculateDistance } from '../../../util/calculateDistance';
 import { sendNotifications } from '../../../util/notificaton';
 import generateOTP from '../../../util/generateOTP';
+import { User } from '../user/user.model';
+import { Payment } from '../payment/payment.model';
+import stripe from '../../../config/stripe';
 
 const createRideBookingToDB = async (
   payload: Partial<IRideBooking>,
@@ -131,23 +134,41 @@ const continueRide = async (rideId: string, driverId: string) => {
   if (!ride || !['requested', 'accepted'].includes(ride.rideStatus)) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Invalid ride or already continue'
+      'Invalid ride or already in progress'
     );
   }
 
+  // Update Cabwire ride status
   ride.rideStatus = 'continue';
   await ride.save();
 
-  if (ride._id) {
-    sendNotifications({
-      text: 'Your Cabwire ride is now in continue!',
-      receiver: ride._id, // For socket emit
+  // Ensure driverId is ObjectId
+  const updatedBooking = await RideBooking.findOneAndUpdate(
+    {
       rideId: ride._id,
-      driverId,
-    });
+      driverId: new Types.ObjectId(driverId),
+    },
+    { $set: { rideStatus: 'continue' } },
+    { new: true }
+  );
+
+  if (!updatedBooking) {
+    console.log('No matching RideBooking found for this driver and ride.');
+  } else {
+    console.log('Updated RideBooking:', updatedBooking);
   }
+
+  // Send notification
+  sendNotifications({
+    text: 'Your Cabwire ride is now in continue!',
+    receiver: ride._id,
+    rideId: ride._id,
+    driverId,
+  });
+
   return ride;
 };
+
 // request colose ride
 const requestCloseRide = async (rideId: string, driverId: string) => {
   const ride = await CabwireModel.findById(rideId);
@@ -261,10 +282,130 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
   return updatedRide;
 };
 
+const createCabwireOrBookingPayment = async (payload: {
+  sourceId: string; // Cabwire rideId
+  userId: string;
+  method: 'stripe' | 'offline';
+}) => {
+  const { sourceId, userId, method } = payload;
+
+  // ✅ Validate IDs
+  if (!isValidObjectId(sourceId) || !isValidObjectId(userId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid IDs are required');
+  }
+
+  if (!['stripe', 'offline'].includes(method)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
+  }
+
+  // ✅ Fetch Cabwire ride
+  const ride = await CabwireModel.findById(sourceId);
+  if (!ride)
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Cabwire ride not found');
+
+  const fare = ride.fare;
+  const driverId = ride.driverId?.toString();
+  const adminId = '683d770e4a6d774b3e65fb8e'; // Fixed adminId
+
+  if (!fare || !driverId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ride data');
+  }
+
+  // ✅ Split amount
+  const driverAmount = parseFloat((fare * 0.9).toFixed(2));
+  const adminAmount = parseFloat((fare * 0.1).toFixed(2));
+
+  // ✅ Payment variables
+  let transactionId: string;
+  let stripeSessionUrl: string | undefined;
+  let status: 'pending' | 'paid' = method === 'offline' ? 'paid' : 'pending';
+
+  if (method === 'stripe') {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Cabwire Fare',
+              description: `Payment for Cabwire ride ID: ${sourceId}`,
+            },
+            unit_amount: Math.round(fare * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: 'https://example.com/success',
+      cancel_url: 'https://example.com/cancel',
+      metadata: {
+        sourceId,
+        userId,
+        method,
+        sourceType: 'cabwire',
+      },
+    });
+
+    transactionId = session.id;
+    stripeSessionUrl = session.url ?? undefined;
+  } else {
+    transactionId = `offline_${Date.now()}`;
+  }
+
+  // ✅ Create Payment
+  const payment = await Payment.create({
+    rideId: sourceId,
+    userId,
+    driverId,
+    adminId,
+    method,
+    status,
+    transactionId,
+    sessionUrl: stripeSessionUrl,
+    amount: fare,
+    driverAmount,
+    adminAmount,
+    paidAt: status === 'paid' ? new Date() : undefined,
+  });
+
+  // ✅ Update related stats if already paid (for offline)
+  if (status === 'paid') {
+    // Ride payment status
+    ride.paymentStatus = 'paid';
+    await ride.save();
+
+    // Driver Stats
+    await User.findByIdAndUpdate(driverId, {
+      $inc: { driverTotalEarn: driverAmount },
+    });
+
+    // Admin Stats
+    await User.updateOne(
+      { _id: adminId },
+      { $inc: { adminRevenue: adminAmount } }
+    );
+
+    // User Stats
+    await User.findByIdAndUpdate(userId, {
+      $inc: {
+        totalAmountSpend: fare,
+        totalTrip: 1,
+      },
+    });
+  }
+
+  return {
+    payment,
+    redirectUrl: stripeSessionUrl,
+  };
+};
+
 export const RideBookingService = {
   createRideBookingToDB,
   cancelRide,
   continueRide,
   requestCloseRide,
   completeRideWithOtp,
+  createCabwireOrBookingPayment,
 };

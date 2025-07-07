@@ -8,25 +8,6 @@ import catchAsync from '../../../shared/catchAsync';
 import { StatusCodes } from 'http-status-codes';
 import sendResponse from '../../../shared/sendResponse';
 
-const createCabwireOrBookingPayment = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const payment = await PaymentService.createCabwireOrBookingPayment(
-      req.body
-    );
-    res.status(201).json({
-      success: true,
-      message: 'Payment created successfully',
-      data: payment,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 const getAllPaymentsWithDriver = catchAsync(
   async (req: Request, res: Response) => {
     const payments = await PaymentService.getAllPaymentsWithDriver();
@@ -160,7 +141,6 @@ const getTotalRevenue = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const PaymentController = {
-  createCabwireOrBookingPayment,
   getAllPaymentsByUserId,
 
   getAllPaymentsWithDriver,

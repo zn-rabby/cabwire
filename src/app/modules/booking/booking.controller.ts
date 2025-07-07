@@ -118,10 +118,43 @@ const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const createCabwireOrBookingPayment = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized user');
+    }
+
+    const { rideId, method } = req.body;
+
+    if (!rideId || !method) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'rideId and method are required'
+      );
+    }
+
+    const payment = await RideBookingService.createCabwireOrBookingPayment({
+      sourceId: rideId,
+      userId,
+      method,
+    });
+
+    res.status(StatusCodes.CREATED).json({
+      statusCode: StatusCodes.CREATED,
+      success: true,
+      message: 'Cabwire Payment created successfully',
+      data: payment,
+    });
+  }
+);
+
 export const RideBookingController = {
   createRideBooking,
   cancelRide,
   continueRide,
   requestCloseRide,
   completeRideWithOtp,
+  createCabwireOrBookingPayment,
 };

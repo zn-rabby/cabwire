@@ -45,110 +45,6 @@ export async function createOrGetStripeAccount(
   return account.id;
 }
 
-const createCabwireOrBookingPayment = async (payload: {
-  sourceId: string;
-  userId: string;
-  method: 'stripe' | 'offline';
-  sourceType: 'cabwire' | 'ride-booking';
-}) => {
-  const { sourceId, userId, method, sourceType } = payload;
-
-  if (!isValidObjectId(sourceId) || !isValidObjectId(userId)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid IDs are required');
-  }
-
-  if (!['stripe', 'offline'].includes(method)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
-  }
-
-  // Fetch source (ride or ride-booking)
-  let fare: number = 0;
-  let driverId: string;
-
-  if (sourceType === 'cabwire') {
-    const ride = await CabwireModel.findById(sourceId);
-    if (!ride) throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
-    if (typeof ride.fare !== 'number' || !ride.driverId) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ride data');
-    }
-    fare = ride.fare;
-    driverId = ride.driverId.toString();
-  } else {
-    const booking = await RideBooking.findById(sourceId);
-    if (!booking)
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Booking not found');
-    if (typeof booking.fare !== 'number' || !booking.driverId) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid booking data');
-    }
-    fare = booking.fare;
-    driverId = booking.driverId.toString();
-  }
-
-  if (!fare || fare <= 0) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid fare');
-  }
-
-  // Calculate 90% for driver, 10% for admin
-  const driverAmount = parseFloat((fare * 0.9).toFixed(2));
-  const adminAmount = parseFloat((fare * 0.1).toFixed(2));
-  const adminId = '683d770e4a6d774b3e65fb8e'; // Fixed Admin ID
-
-  let transactionId: string | undefined;
-  let stripeSessionUrl: string | undefined;
-  let status: 'pending' | 'paid' | 'failed' = 'pending';
-
-  if (method === 'stripe') {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Ride Payment',
-              description: `Payment for ${sourceType} ID: ${sourceId}`,
-            },
-            unit_amount: Math.round(fare * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: 'https://example.com/success',
-      cancel_url: 'https://example.com/cancel',
-      metadata: { sourceId, userId, method, sourceType },
-    });
-
-    transactionId = session.id;
-    stripeSessionUrl = session.url ?? undefined;
-    status = 'pending';
-  } else {
-    transactionId = `offline_${Date.now()}`;
-    status = 'paid';
-  }
-
-  const payment = await Payment.create({
-    rideId: sourceType === 'cabwire' ? sourceId : undefined,
-    rideBookingId: sourceType === 'ride-booking' ? sourceId : undefined,
-    userId,
-    driverId,
-    adminId,
-    method,
-    status,
-    transactionId,
-    sessionUrl: stripeSessionUrl,
-    amount: fare,
-    driverAmount,
-    adminAmount,
-    paidAt: status === 'paid' ? new Date() : undefined,
-  });
-
-  return {
-    payment,
-    redirectUrl: stripeSessionUrl,
-  };
-};
-
 // Generate Stripe onboarding link
 export async function createStripeOnboardingLink(
   stripeAccountId: string
@@ -463,8 +359,6 @@ const getTotalRevenue = async () => {
 };
 
 export const PaymentService = {
-  createCabwireOrBookingPayment,
-
   getAllPaymentsByUserId,
   getAllPaymentsWithDriver,
   createAccountToStripe,
