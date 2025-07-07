@@ -15,20 +15,34 @@ export interface ILocation {
   lng: number;
   address?: string;
 }
-
 export interface ICabwire extends Document {
   driverId: Types.ObjectId;
+  userId?: Types.ObjectId; // from ride booking
+
+  // Ride details
   pickupLocation: ILocation;
   dropoffLocation: ILocation;
   distance?: number;
   duration?: number;
   fare?: number;
+  perKM: number;
+
+  // Time
+  startTime?: Date;
+  endTime?: Date;
+  lastBookingTime?: number;
+
+  // Seats
+  seatsBooked?: number;
+
+  // OTP
   otp?: string;
 
+  // Ride + Payment Status
   rideStatus: RideStatus;
-  setAvailable: number;
-  lastBookingTime: number;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
-  perKM: number;
+
+  // Availability
+  setAvailable: number;
 }

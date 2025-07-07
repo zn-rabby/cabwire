@@ -8,6 +8,10 @@ const CabwireSchema = new Schema<ICabwire>(
       ref: 'User',
       required: true,
     },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
     pickupLocation: {
       lat: { type: Number, required: true },
       lng: { type: Number, required: true },
@@ -21,6 +25,7 @@ const CabwireSchema = new Schema<ICabwire>(
     distance: { type: Number },
     duration: { type: Number },
     fare: { type: Number },
+    perKM: { type: Number, required: true },
     otp: {
       type: String,
       select: false,
@@ -29,7 +34,7 @@ const CabwireSchema = new Schema<ICabwire>(
       type: String,
       enum: [
         'requested',
-        'accepted',
+        'book',
         'continue',
         'clouse',
         'cancelled',
@@ -38,8 +43,14 @@ const CabwireSchema = new Schema<ICabwire>(
       default: 'requested',
     },
     setAvailable: { type: Number, required: true },
-    lastBookingTime: { type: Number, required: true },
-    perKM: { type: Number, required: true },
+    lastBookingTime: { type: Number, required: false },
+
+    // New from booking
+    startTime: { type: Date },
+    endTime: { type: Date },
+    seatsBooked: { type: Number },
+
+    // Payment info
     paymentMethod: {
       type: String,
       enum: ['stripe', 'offline'],
