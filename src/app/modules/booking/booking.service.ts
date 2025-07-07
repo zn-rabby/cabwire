@@ -10,28 +10,25 @@ import generateOTP from '../../../util/generateOTP';
 
 const createRideBookingToDB = async (
   payload: Partial<IRideBooking>,
-  driverObjectId: Types.ObjectId
+  userObjectId: Types.ObjectId // auth থেকে passenger userId
 ) => {
-  // ✅ Input Validation
+  // Validation
   if (!payload.rideId) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'rideId is required');
   }
-
   if (!payload.paymentMethod) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'paymentMethod is required');
   }
-
   if (!payload.seatsBooked || payload.seatsBooked <= 0) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'seatsBooked must be > 0');
   }
 
-  // 🔍 Find Ride
+  // রাইড ডাটাবেজ থেকে ফেচ করুন
   const ride = await CabwireModel.findById(payload.rideId);
   if (!ride) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Associated ride not found');
   }
 
-  // ✅ Validate essential ride fields
   if (
     !ride.perKM ||
     !ride.pickupLocation ||
@@ -41,32 +38,32 @@ const createRideBookingToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Incomplete ride data');
   }
 
-  // 📏 Calculate distance
+  // Calculate distance and fare
   const distance = calculateDistance(ride.pickupLocation, ride.dropoffLocation);
-
-  // 💵 Final Fare = distance × perKM × seatsBooked
   const fare = Math.round(distance * ride.perKM * payload.seatsBooked);
 
-  // 🪑 Check seat availability
-  const availableSeats = ride.setAvailable;
-  if (payload.seatsBooked > availableSeats) {
+  if (payload.seatsBooked > ride.setAvailable) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      `Only ${availableSeats} seat(s) available`
+      `Only ${ride.setAvailable} seat(s) available`
     );
   }
 
-  // 🎯 Prepare booking data
+  // এখানে driverId আসবে ride.driverId থেকে
+  const driverId = ride.driverId;
+
+  // Booking data প্রস্তুত করুন
   const bookingPayload: Partial<IRideBooking> = {
     ...payload,
     fare,
     distance,
-    driverId: driverObjectId,
+    userId: userObjectId, // auth থেকে passenger
+    driverId, // ride.driverId থেকে ড্রাইভার
     rideStatus: 'accepted',
     paymentStatus: 'pending',
   };
 
-  // ✅ Create Booking
+  // Booking তৈরি করুন
   const booking = await RideBooking.create(bookingPayload);
   if (!booking) {
     throw new ApiError(
@@ -75,23 +72,23 @@ const createRideBookingToDB = async (
     );
   }
 
-  // 🔄 Update ride: reduce seats & set status
+  // Ride এর seat কমান এবং status আপডেট করুন
   await CabwireModel.findByIdAndUpdate(payload.rideId, {
     $inc: { setAvailable: -payload.seatsBooked },
     rideStatus: 'accepted',
   });
 
-  // 🔗 Populate ride and return
+  // Booking এ ride populate করুন
   const bookingWithRide = await RideBooking.findById(booking._id).populate(
     'rideId'
   );
 
-  // 📡 Send Notification via Socket
+  // Notification পাঠান ড্রাইভারকে
   sendNotifications({
     text: 'New ride booking accepted!',
     rideId: ride._id,
-    userId: driverObjectId, // This booking is linked to this driver
-    receiver: driverObjectId.toString(), // For socket emit
+    userId: driverId?.toString(), // ড্রাইভারকে জানানো হচ্ছে
+    receiver: driverId?.toString(),
     pickupLocation: ride.pickupLocation,
     dropoffLocation: ride.dropoffLocation,
     status: 'accepted',
@@ -99,9 +96,9 @@ const createRideBookingToDB = async (
     distance,
     duration: ride.duration,
   });
+
   return bookingWithRide;
 };
-
 const cancelRide = async (rideId: string, driverId: string) => {
   const ride = await CabwireModel.findById(rideId);
 

@@ -5,11 +5,13 @@ import { StatusCodes } from 'http-status-codes';
 import ApiError from '../../../errors/ApiError';
 import { sendNotifications } from '../../../util/notificaton';
 
-const createRideByDriver = async (payload: ICabwire): Promise<ICabwire> => {
+const createRideByDriver = async (
+  payload: Partial<ICabwire>,
+  driverId: string
+): Promise<ICabwire> => {
   const {
     pickupLocation,
     dropoffLocation,
-    driverId,
     distance,
     duration,
     perKM,
@@ -18,17 +20,17 @@ const createRideByDriver = async (payload: ICabwire): Promise<ICabwire> => {
     lastBookingTime,
   } = payload;
 
-  // ✅ Input validation
-  if (!driverId || !pickupLocation || !dropoffLocation || !distance || !perKM) {
+  // Input validation
+  if (!pickupLocation || !dropoffLocation || !distance || !perKM) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Required ride data missing');
   }
 
-  // 💵 Fare Calculation
+  // Fare calculation
   const fare = Math.round(distance * perKM);
 
-  // 🧱 Ride Data Build
+  // Build ride data with driverId from auth
   const rideData: Partial<ICabwire> = {
-    driverId: new Types.ObjectId(driverId),
+    driverId: new Types.ObjectId(driverId), // auth থেকে driverId সেট করলাম
     pickupLocation,
     dropoffLocation,
     distance,
@@ -38,20 +40,19 @@ const createRideByDriver = async (payload: ICabwire): Promise<ICabwire> => {
     setAvailable: setAvailable ?? 1,
     paymentMethod: paymentMethod ?? 'offline',
     paymentStatus: 'pending',
-    lastBookingTime: lastBookingTime ?? Date.now() + 15 * 60 * 1000, // default 15 mins later
+    lastBookingTime: lastBookingTime ?? Date.now() + 15 * 60 * 1000,
     perKM,
   };
 
-  // 🚀 Create Ride
+  // Create ride
   const ride = await CabwireModel.create(rideData);
-  console.log('ride=', ride);
 
-  // 📡 Send Notification via Socket
+  // Send notification to driver (auth driver)
   sendNotifications({
     text: 'Ride created successfully!',
     rideId: ride._id,
-    userId: ride.driverId, // Notification belongs to driver
-    receiver: ride.driverId?.toString(), // for socket emit
+    userId: driverId,
+    receiver: driverId,
     pickupLocation: ride.pickupLocation,
     dropoffLocation: ride.dropoffLocation,
     status: ride.rideStatus,

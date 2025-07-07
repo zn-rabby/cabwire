@@ -7,9 +7,9 @@ import mongoose, { Types } from 'mongoose';
 import ApiError from '../../../errors/ApiError';
 
 const createRideBooking = catchAsync(async (req: Request, res: Response) => {
-  const driverId = req.user?.id;
+  const userId = req.user?.id; // auth থেকে
 
-  if (!driverId) {
+  if (!userId) {
     throw new ApiError(
       StatusCodes.UNAUTHORIZED,
       'Unauthorized. Please log in.'
@@ -18,11 +18,11 @@ const createRideBooking = catchAsync(async (req: Request, res: Response) => {
 
   const result = await RideBookingService.createRideBookingToDB(
     req.body,
-    new mongoose.Types.ObjectId(driverId)
+    new mongoose.Types.ObjectId(userId) // auth থেকে passenger userId
   );
 
   sendResponse(res, {
-    statusCode: 201,
+    statusCode: StatusCodes.CREATED,
     success: true,
     message: 'Ride booking created successfully',
     data: result,

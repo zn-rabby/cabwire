@@ -16,5 +16,4 @@ router.post(
   CabwireController.createRide
 );
 
-
 export const CabwireRoutes = router;
