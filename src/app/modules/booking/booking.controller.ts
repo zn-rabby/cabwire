@@ -126,19 +126,15 @@ const createCabwireOrBookingPayment = catchAsync(
       throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized user');
     }
 
-    const { rideId, method } = req.body;
+    const { rideId } = req.body;
 
-    if (!rideId || !method) {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        'rideId and method are required'
-      );
+    if (!rideId) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'rideId is required');
     }
 
     const payment = await RideBookingService.createCabwireOrBookingPayment({
       sourceId: rideId,
       userId,
-      method,
     });
 
     res.status(StatusCodes.CREATED).json({

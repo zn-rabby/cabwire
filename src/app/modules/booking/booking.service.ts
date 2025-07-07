@@ -285,17 +285,12 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
 const createCabwireOrBookingPayment = async (payload: {
   sourceId: string; // Cabwire rideId
   userId: string;
-  method: 'stripe' | 'offline';
 }) => {
-  const { sourceId, userId, method } = payload;
+  const { sourceId, userId } = payload;
 
   // ✅ Validate IDs
   if (!isValidObjectId(sourceId) || !isValidObjectId(userId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid IDs are required');
-  }
-
-  if (!['stripe', 'offline'].includes(method)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid payment method');
   }
 
   // ✅ Fetch Cabwire ride
@@ -305,10 +300,18 @@ const createCabwireOrBookingPayment = async (payload: {
 
   const fare = ride.fare;
   const driverId = ride.driverId?.toString();
+  const method = ride.paymentMethod; // 🔥 Now taking method from ride model
   const adminId = '683d770e4a6d774b3e65fb8e'; // Fixed adminId
 
-  if (!fare || !driverId) {
+  if (!fare || !driverId || !method) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ride data');
+  }
+
+  if (!['stripe', 'offline'].includes(method)) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid payment method in ride'
+    );
   }
 
   // ✅ Split amount
