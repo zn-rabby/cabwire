@@ -283,25 +283,24 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
 };
 
 const createCabwireOrBookingPayment = async (payload: {
-  sourceId: string; // Cabwire rideId
+  sourceId: string;
   userId: string;
 }) => {
   const { sourceId, userId } = payload;
 
-  // ✅ Validate IDs
+  // Validate input
   if (!isValidObjectId(sourceId) || !isValidObjectId(userId)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid IDs are required');
   }
 
-  // ✅ Fetch Cabwire ride
+  // Fetch Cabwire ride
   const ride = await CabwireModel.findById(sourceId);
   if (!ride)
     throw new ApiError(StatusCodes.NOT_FOUND, 'Cabwire ride not found');
 
   const fare = ride.fare;
   const driverId = ride.driverId?.toString();
-  const method = ride.paymentMethod; // 🔥 Now taking method from ride model
-  const adminId = '683d770e4a6d774b3e65fb8e'; // Fixed adminId
+  const method = ride.paymentMethod;
 
   if (!fare || !driverId || !method) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ride data');
@@ -314,15 +313,15 @@ const createCabwireOrBookingPayment = async (payload: {
     );
   }
 
-  // ✅ Split amount
+  // Calculate shares
   const driverAmount = parseFloat((fare * 0.9).toFixed(2));
   const adminAmount = parseFloat((fare * 0.1).toFixed(2));
 
-  // ✅ Payment variables
   let transactionId: string;
   let stripeSessionUrl: string | undefined;
   let status: 'pending' | 'paid' = method === 'offline' ? 'paid' : 'pending';
 
+  // Handle Stripe
   if (method === 'stripe') {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -356,12 +355,11 @@ const createCabwireOrBookingPayment = async (payload: {
     transactionId = `offline_${Date.now()}`;
   }
 
-  // ✅ Create Payment
+  // Create payment
   const payment = await Payment.create({
     rideId: sourceId,
     userId,
     driverId,
-    adminId,
     method,
     status,
     transactionId,
@@ -372,24 +370,32 @@ const createCabwireOrBookingPayment = async (payload: {
     paidAt: status === 'paid' ? new Date() : undefined,
   });
 
-  // ✅ Update related stats if already paid (for offline)
+  // If already paid (offline), update all stats
+  console.log(11, status === 'paid');
   if (status === 'paid') {
-    // Ride payment status
+    // Mark ride as paid
     ride.paymentStatus = 'paid';
     await ride.save();
 
-    // Driver Stats
+    // Update driver
     await User.findByIdAndUpdate(driverId, {
-      $inc: { driverTotalEarn: driverAmount },
+      $inc: {
+        driverTotalEarn: driverAmount,
+      },
     });
 
-    // Admin Stats
+    // Update admin
     await User.updateOne(
-      { _id: adminId },
-      { $inc: { adminRevenue: adminAmount } }
+      { role: 'admin' },
+      {
+        $inc: {
+          adminRevenue: adminAmount,
+        },
+      },
+      { sort: { createdAt: 1 } }
     );
 
-    // User Stats
+    // Update user
     await User.findByIdAndUpdate(userId, {
       $inc: {
         totalAmountSpend: fare,
