@@ -492,7 +492,6 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
     transactionId = session.id;
     paymentStatus = 'paid'; // Will confirm later from Stripe webhook
   } else {
-    paymentStatus = 'paid';
     transactionId = `offline_txn_${Date.now()}`;
   }
 
