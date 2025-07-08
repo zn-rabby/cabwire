@@ -116,13 +116,12 @@ const getReviewFromDB = async (id: any) => {
   return reviews;
 };
 
-const getReviewsFromDB = async (id: any): Promise<IReview[]> => {
-  // Validate ID before making a database call
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Offer ID');
+const getReviewsFromDB = async (serviceId: string): Promise<IReview[]> => {
+  if (!mongoose.Types.ObjectId.isValid(serviceId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Service ID');
   }
 
-  const reviews = await Review.find({ service: id });
+  const reviews = await Review.find({ serviceId }).populate('user', 'name');
   return reviews;
 };
 
