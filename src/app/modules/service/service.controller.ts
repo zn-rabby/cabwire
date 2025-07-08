@@ -6,16 +6,6 @@ import { ServiceServices } from './service.service';
 
 const createService = catchAsync(async (req: Request, res: Response) => {
   const { ...serviceData } = req.body;
-  console.log(req.body);
-  // let image = '';
-  // const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-  // const serviceImage = files?.image?.[0];
-  // if (serviceImage) {
-  //   image = `/uploads/image/${serviceImage.filename}`;
-  // }
-  // const data = {
-  //   ...serviceData,
-  // };
 
   const result = await ServiceServices.createServiceToDB(serviceData);
 
@@ -52,15 +42,6 @@ const getSingleService = catchAsync(async (req: Request, res: Response) => {
 const updateService = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id;
   const updateServiceData = req.body;
-
-  // let image;
-  // if (req.files && 'image' in req.files && req.files.image[0]) {
-  //   image = `/uploads/image/${req.files.image[0].filename}`;
-  // }
-  // const data = {
-  //   ...updateServiceData,
-  //   image,
-  // };
 
   const result = await ServiceServices.updateServiceToDB(id, updateServiceData);
 

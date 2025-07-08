@@ -4,25 +4,59 @@ import { IService } from './service.interface';
 import { Service } from './service.model';
 import unlinkFile from '../../../shared/unlinkFile';
 
+// const createServiceToDB = async (payload: IService) => {
+//   const { serviceName, image } = payload;
+//   const isExistName = await Service.findOne({ name: serviceName });
+
+//   if (isExistName) {
+//     unlinkFile(image);
+//     throw new ApiError(
+//       StatusCodes.NOT_ACCEPTABLE,
+//       'This Service Name Already Exist'
+//     );
+//   }
+
+//   const createService: any = await Service.create(payload);
+//   if (!createService) {
+//     unlinkFile(image);
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create Service');
+//   }
+
+//   return createService;
+// };
+
 const createServiceToDB = async (payload: IService) => {
   const { serviceName, image } = payload;
-  const isExistName = await Service.findOne({ name: serviceName });
 
-  if (isExistName) {
-    unlinkFile(image);
-    throw new ApiError(
-      StatusCodes.NOT_ACCEPTABLE,
-      'This Service Name Already Exist'
-    );
+  try {
+    const isExistName = await Service.findOne({ serviceName });
+    if (isExistName) {
+      unlinkFile(image);
+      throw new ApiError(
+        StatusCodes.NOT_ACCEPTABLE,
+        'This Service Name Already Exist'
+      );
+    }
+
+    const createService: any = await Service.create(payload);
+    if (!createService) {
+      unlinkFile(image);
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create Service');
+    }
+
+    return createService;
+  } catch (error: any) {
+    // Duplicate key error handling (E11000)
+    if (error.code === 11000 && error.message.includes('serviceName')) {
+      unlinkFile(image);
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        'Service name already exists in database'
+      );
+    }
+
+    throw error;
   }
-
-  const createService: any = await Service.create(payload);
-  if (!createService) {
-    unlinkFile(image);
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create Service');
-  }
-
-  return createService;
 };
 
 const getServicesFromDB = async (): Promise<IService[]> => {
@@ -69,6 +103,7 @@ const updateServiceToDB = async (id: string, payload: IService) => {
 
   return updateService;
 };
+
 const updateServiceStatusToDB = async (id: string, payload: IService) => {
   const isExistService: any = await Service.findById(id);
 

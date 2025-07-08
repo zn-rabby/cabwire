@@ -270,6 +270,20 @@ const getAllDriverRequest = async (query: Record<string, unknown>) => {
   const meta = await userQuery.countTotal();
   return { meta, result };
 };
+const getAllDriverRequestCoount = async (query: Record<string, unknown>) => {
+  const filters: Record<string, unknown> = {
+    role: { $in: [USER_ROLES.DRIVER] },
+    action: 'request', // Only approved drivers
+  };
+
+  const userQuery = new QueryBuilder(User.find(filters), query)
+    .search(['name', 'email']) // Optional searchable fields
+    .filter()
+    .fields();
+
+  const count = await userQuery.modelQuery.countDocuments(); // Only count the matching documents
+  return { count }; // Return the count
+};
 
 const getTotalDriverCount = async () => {
   const userCount = await User.countDocuments({ role: USER_ROLES.DRIVER });
@@ -409,6 +423,7 @@ export const UserService = {
   // driver
   getAllDriverQuery,
   getAllDriverRequest,
+  getAllDriverRequestCoount,
   getTotalDriverCount,
   getAllResentDriverQuery,
   driverStatusUpdate,

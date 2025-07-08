@@ -11,7 +11,7 @@ const reviewSchema = new Schema<IReview, ReviewModel>(
     serviceId: {
       type: Schema.Types.ObjectId,
       required: true,
-      refPath: 'serviceType', // 👈 dynamic reference here
+      refPath: 'serviceType', // dynamic reference here
     },
     user: {
       type: Schema.Types.ObjectId,

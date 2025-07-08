@@ -119,6 +119,11 @@ router.get(
   UserController.getAllDriverRequest
 );
 router.get(
+  '/all-drivers-request-count',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getAllDriverRequestCount
+);
+router.get(
   '/all-driver-count',
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   UserController.getTotalDriverCount

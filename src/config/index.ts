@@ -26,4 +26,13 @@ export default {
     email: process.env.SUPER_ADMIN_EMAIL,
     password: process.env.SUPER_ADMIN_PASSWORD,
   },
+
+  // webrtc
+  username: process.env.BW_USERNAME!,
+  password: process.env.BW_PASSWORD!,
+  accountId: process.env.BW_ACCOUNT_ID!,
+  voiceCallbackUrl: process.env.BASE_CALLBACK_URL!,
+  voiceAppId: process.env.BW_VOICE_APPLICATION_ID!,
+  phoneNumber: process.env.BW_NUMBER!,
+  sipCallControlUrl: process.env.BANDWIDTH_WEBRTC_CALL_CONTROL_URL!,
 };

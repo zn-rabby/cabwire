@@ -28,6 +28,7 @@ const getReview = catchAsync(async (req, res) => {
     data: result,
   });
 });
+
 const getReviews = catchAsync(async (req: Request, res: Response) => {
   const serviceId = req.params.serviceId;
   const result = await ReviewService.getReviewsFromDB(serviceId);
@@ -39,4 +40,5 @@ const getReviews = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 export const ReviewController = { createReview, getReview, getReviews };
