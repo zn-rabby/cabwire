@@ -1,10 +1,22 @@
-import { Model, Types } from 'mongoose';
+import { Types, Model } from 'mongoose';
 
-export type IReview = {
-  service: Types.ObjectId;
-  user: Types.ObjectId;
+export type ServiceType = 'Ride' | 'Cabwire' | 'Package';
+
+export interface IReview {
+  serviceType: ServiceType;
+  serviceId: Types.ObjectId; // Dynamic ref based on serviceType
+  user: Types.ObjectId; // Ref to User
   comment: string;
   rating: number;
-};
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
+// Optional: add static methods if needed
 export type ReviewModel = Model<IReview>;
+
+export interface IRateableService extends Document {
+  save: any;
+  totalRating: number;
+  rating: number;
+}

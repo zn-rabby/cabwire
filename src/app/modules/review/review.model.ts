@@ -3,10 +3,15 @@ import { IReview, ReviewModel } from './review.interface';
 
 const reviewSchema = new Schema<IReview, ReviewModel>(
   {
-    service: {
-      type: Schema.Types.ObjectId,
-      ref: 'Ride',
+    serviceType: {
+      type: String,
+      enum: ['Ride', 'Cabwire', 'Package'],
       required: true,
+    },
+    serviceId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      refPath: 'serviceType', // 👈 dynamic reference here
     },
     user: {
       type: Schema.Types.ObjectId,
