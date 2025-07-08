@@ -10,14 +10,6 @@ import ApiError from '../../../errors/ApiError';
 const createCategory = catchAsync(async (req: Request, res: Response) => {
   const { ...categoryData } = req.body;
 
-  // let image = '';
-  // if (req.files && 'image' in req.files && req.files.image[0]) {
-  //   image = `/images/${req.files.image[0].filename}`;
-  // }
-  // const data = {
-  //   ...categoryData,
-  //   image,
-  // };
   const result = await CategoryServices.createCategoryToDB(categoryData);
 
   sendResponse(res, {

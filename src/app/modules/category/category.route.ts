@@ -5,6 +5,7 @@ import { CategoryController } from './category.controller';
 import validateRequest from '../../middlewares/validateRequest';
 import fileUploadHandler from '../../middlewares/fileUploadHandler';
 import parseFileData from '../../middlewares/parseFileData';
+import { CategoryValidation } from './category.validation';
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ router
     // auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     fileUploadHandler(),
     parseFileData('image'),
+     validateRequest(CategoryValidation.createCategoryZodSchema),
     CategoryController.createCategory
   )
   .get(

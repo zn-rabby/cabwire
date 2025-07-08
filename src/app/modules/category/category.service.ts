@@ -8,24 +8,39 @@ import unlinkFile from '../../../shared/unlinkFile';
 const createCategoryToDB = async (payload: ICategory): Promise<ICategory> => {
   const { categoryName, image } = payload;
 
-  const isExist = await Category.findOne({ name: categoryName });
+  try {
+    // Check for existing category name
+    const isExist = await Category.findOne({ categoryName });
 
-  if (isExist) {
-    if (image) unlinkFile(image);
-    throw new ApiError(
-      StatusCodes.NOT_ACCEPTABLE,
-      'This Category Name Already Exists'
-    );
+    if (isExist) {
+      if (image) unlinkFile(image);
+      throw new ApiError(
+        StatusCodes.NOT_ACCEPTABLE,
+        'This Category Name Already Exists'
+      );
+    }
+
+    // Create new category
+    const newCategory = await Category.create(payload);
+
+    if (!newCategory) {
+      if (image) unlinkFile(image);
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create Category');
+    }
+
+    return newCategory;
+  } catch (error: any) {
+    // Handle duplicate key error (MongoDB E11000)
+    if (error.code === 11000 && error.message.includes('categoryName')) {
+      if (image) unlinkFile(image);
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        'Category name already exists in database'
+      );
+    }
+    // Re-throw other errors
+    throw error;
   }
-
-  const newCategory = await Category.create(payload);
-
-  if (!newCategory) {
-    if (image) unlinkFile(image);
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create Category');
-  }
-
-  return newCategory;
 };
 // Get All Categories
 const getCategoriesFromDB = async (): Promise<ICategory[]> => {
