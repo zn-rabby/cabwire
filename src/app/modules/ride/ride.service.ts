@@ -87,6 +87,114 @@ const updateDriverLocation = async (
 };
 
 // create ride
+// const createRideToDB = async (
+//   payload: Partial<IRide>,
+//   userObjectId: Types.ObjectId
+// ) => {
+//   const pickup = payload.pickupLocation;
+//   const dropoff = payload.dropoffLocation;
+
+//   // Validate input
+//   if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Pickup and dropoff coordinates are required.'
+//     );
+//   }
+
+//   if (typeof payload.duration !== 'number' || payload.duration <= 0) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Duration must be a positive number.'
+//     );
+//   }
+
+//   if (!payload.service || !payload.category) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Service and category are required.'
+//     );
+//   }
+
+//   // Fetch service & category
+//   const [service, category] = await Promise.all([
+//     Service.findById(payload.service),
+//     Category.findById(payload.category),
+//   ]);
+//   if (!service || !category) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Invalid service or category ID.'
+//     );
+//   }
+
+//   const distance = calculateDistance(pickup, dropoff);
+
+//   let fare: number;
+//   try {
+//     fare = calculateFare({
+//       service,
+//       category,
+//       distance,
+//       duration: payload.duration,
+//     });
+//   } catch (error) {
+//     throw new ApiError(
+//       StatusCodes.INTERNAL_SERVER_ERROR,
+//       'Failed to calculate fare: ' +
+//         (error instanceof Error ? error.message : '')
+//     );
+//   }
+
+//   // Create ride
+//   const ride = await Ride.create({
+//     ...payload,
+//     userId: userObjectId,
+//     distance,
+//     fare,
+//     rideStatus: 'requested',
+//     paymentStatus: 'pending',
+//   });
+
+//   // Find nearby drivers (within 5km)
+//   const nearestDrivers = await findNearestOnlineRiders({
+//     coordinates: [pickup.lng, pickup.lat],
+//   });
+//   console.log('nearsest drivers=', nearestDrivers);
+
+//   if (!nearestDrivers.length) {
+//     throw new ApiError(
+//       StatusCodes.NOT_FOUND,
+//       'No available drivers near your pickup location.'
+//     );
+//   }
+
+//   // Emit socket events to each driver room
+//   const io = global.io;
+
+//   if (ride?._id) {
+//     nearestDrivers.forEach(driver => {
+//       console.log(44, driver?._id);
+//       sendNotifications({
+//         text: 'Ride created successfully',
+//         rideId: ride._id,
+//         userId: ride.userId,
+//         receiver: driver?._id, // socket emit এই receiver আইডিতে হবে
+//         pickupLocation: ride.pickupLocation,
+//         dropoffLocation: ride.dropoffLocation,
+//         status: ride.rideStatus,
+//         fare: ride.fare,
+//         distance: ride.distance,
+//         duration: ride.duration,
+//         event: 'ride-requested', // custom event name
+//       });
+//     });
+//   }
+
+//   return ride;
+// };
+
+// create ride
 const createRideToDB = async (
   payload: Partial<IRide>,
   userObjectId: Types.ObjectId
@@ -160,7 +268,6 @@ const createRideToDB = async (
   const nearestDrivers = await findNearestOnlineRiders({
     coordinates: [pickup.lng, pickup.lat],
   });
-  console.log('nearsest drivers=', nearestDrivers);
 
   if (!nearestDrivers.length) {
     throw new ApiError(
@@ -173,20 +280,26 @@ const createRideToDB = async (
   const io = global.io;
 
   if (ride?._id) {
+    const rideIdString = ride._id.toString(); // ✅ Fix: convert to string
+
     nearestDrivers.forEach(driver => {
-      console.log(44, driver?._id);
+      const driverId = driver?._id?.toString();
+      console.log('🔔 Sending notification to driver:', driverId);
+      console.log('🚗 Ride ID:', rideIdString);
+
       sendNotifications({
         text: 'Ride created successfully',
-        rideId: ride._id,
-        userId: ride.userId,
-        receiver: driver?._id, // socket emit এই receiver আইডিতে হবে
+        rideId: rideIdString,
+
+        userId: ride.userId.toString(),
+        receiver: driverId,
         pickupLocation: ride.pickupLocation,
         dropoffLocation: ride.dropoffLocation,
         status: ride.rideStatus,
         fare: ride.fare,
         distance: ride.distance,
         duration: ride.duration,
-        event: 'ride-requested', // custom event name
+        event: 'ride-requested',
       });
     });
   }

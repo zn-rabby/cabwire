@@ -26,6 +26,11 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
       ref: 'User',
       required: true,
     },
+    rideId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Ride',
+      required: true,
+    },
     referenceId: {
       type: String,
       required: false,
