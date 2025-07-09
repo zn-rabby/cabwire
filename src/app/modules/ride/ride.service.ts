@@ -308,23 +308,69 @@ const createRideToDB = async (
 };
 
 // accept ride
+// const acceptRide = async (rideId: string, driverId: string) => {
+//   const ride = await Ride.findById(rideId);
+//   if (!ride || ride.rideStatus !== 'requested') {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Invalid ride or already accepted'
+//     );
+//   }
+//   // Atomic update check
+//   const updatedRide = await Ride.findOneAndUpdate(
+//     { _id: rideId, rideStatus: 'requested' },
+//     {
+//       driverId: new Types.ObjectId(driverId),
+//       rideStatus: 'accepted',
+//     },
+//     { new: true }
+//   );
+
+//   if (!updatedRide) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Ride has already been accepted by another driver.'
+//     );
+//   }
+//   if (updatedRide._id) {
+//     sendNotifications({
+//       // receiver: updatedRide._id,
+//       receiver: updatedRide.userId,
+//       driverId,
+//       text: 'Ride accept successsfully',
+//     });
+//   }
+//   return updatedRide;
+// };
+
 const acceptRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
+
   if (!ride || ride.rideStatus !== 'requested') {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Invalid ride or already accepted'
     );
   }
-  // Atomic update check
-  const updatedRide = await Ride.findOneAndUpdate(
-    { _id: rideId, rideStatus: 'requested' },
-    {
-      driverId: new Types.ObjectId(driverId),
-      rideStatus: 'accepted',
-    },
-    { new: true }
-  );
+
+  let updatedRide;
+
+  try {
+    updatedRide = await Ride.findOneAndUpdate(
+      { _id: rideId, rideStatus: 'requested' },
+      {
+        driverId: new Types.ObjectId(driverId),
+        rideStatus: 'accepted',
+      },
+      { new: true }
+    );
+  } catch (err) {
+    console.error('MongoDB update error:', err);
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Failed to update ride'
+    );
+  }
 
   if (!updatedRide) {
     throw new ApiError(
@@ -332,14 +378,22 @@ const acceptRide = async (rideId: string, driverId: string) => {
       'Ride has already been accepted by another driver.'
     );
   }
-  if (updatedRide._id) {
-    sendNotifications({
-      // receiver: updatedRide._id,
-      receiver: updatedRide.userId,
-      driverId,
-      text: 'Ride accept successsfully',
-    });
+
+  try {
+    if (updatedRide.userId) {
+      await sendNotifications({
+        receiver: updatedRide.userId,
+        driverId,
+        text: 'Ride accept successsfully',
+      });
+    } else {
+      console.warn('No userId found in updatedRide');
+    }
+  } catch (err) {
+    console.error('Notification sending failed:', err);
+    // Do not crash server
   }
+
   return updatedRide;
 };
 
@@ -390,10 +444,41 @@ const cancelRide = async (rideId: string, driverId: string) => {
 };
 
 // continue rid
+// const continueRide = async (rideId: string, driverId: string) => {
+//   const ride = await Ride.findById(rideId);
+
+//   if (!ride || ride.rideStatus !== 'accepted') {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Invalid ride or already continued'
+//     );
+//   }
+
+//   ride.rideStatus = 'continue';
+//   await ride.save();
+
+//   // Notify the rider via socket
+//   if (ride._id) {
+//     sendNotifications({
+//       receiver: ride.userId, // ✅ corrected
+//       driverId,
+//       rideId: ride._id,
+//       text: 'Your ride is now in progress.',
+//     });
+//   }
+
+//   return ride;
+// };
+
 const continueRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
+  if (!ride) {
+    console.error('Ride not found:', rideId);
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not found');
+  }
 
-  if (!ride || ride.rideStatus !== 'accepted') {
+  if (ride.rideStatus !== 'accepted') {
+    console.error('Ride status not accepted:', ride.rideStatus);
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Invalid ride or already continued'
@@ -401,16 +486,27 @@ const continueRide = async (rideId: string, driverId: string) => {
   }
 
   ride.rideStatus = 'continue';
-  await ride.save();
 
-  // Notify the rider via socket
-  if (ride._id) {
-    sendNotifications({
-      receiver: ride.userId, // ✅ corrected
+  try {
+    await ride.save();
+  } catch (err) {
+    console.error('Error saving ride:', err);
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Failed to update ride'
+    );
+  }
+
+  try {
+    await sendNotifications({
+      receiver: ride.userId,
       driverId,
       rideId: ride._id,
       text: 'Your ride is now in progress.',
     });
+  } catch (err) {
+    console.error('Notification sending failed:', err);
+    // Don’t crash app — optionally just log or handle
   }
 
   return ride;
