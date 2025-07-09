@@ -11,7 +11,7 @@ const createCategoryZodSchema = z.object({
           return {
             message: `Invalid categoryName '${
               ctx.data
-            }'. Expected one of: ${validCategoryNames.join(', ')}`,
+            }'. Expected categoryName of: ${validCategoryNames.join(', ')}`,
           };
         }
         return { message: ctx.defaultError };
