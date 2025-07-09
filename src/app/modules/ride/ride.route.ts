@@ -5,7 +5,11 @@ import { RideController } from './ride.controller';
 
 const router = express.Router();
 
-router.post('/nearest-driver', RideController.findNearestOnlineRiders);
+router.post(
+  '/nearest-driver',
+  auth(USER_ROLES.USER),
+  RideController.findNearestOnlineRiders
+);
 router.patch(
   '/update-driver-location',
   auth(

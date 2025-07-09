@@ -15,25 +15,51 @@ const sendNotificationToDB = async (payload: any): Promise<INotification> => {
 };
 
 // get notifications
-const getNotificationFromDB = async (
-  user: JwtPayload
-): Promise<INotification> => {
-  const result = await Notification.find({ receiver: user.id }).populate({
-    path: 'userId',
-    select: 'name email',
-  });
+// const getNotificationFromDB = async (
+//   user: JwtPayload
+// ): Promise<INotification> => {
+//   const result = await Notification.find({ receiver: user.id }).populate({
+//     path: 'userId',
+//     select: 'name email',
+//   });
+
+//   const unreadCount = await Notification.countDocuments({
+//     receiver: user.id,
+//     read: false,
+//   });
+
+//   const data: any = {
+//     result,
+//     unreadCount,
+//   };
+
+//   return data;
+// };
+const getNotificationFromDB = async (user: JwtPayload): Promise<any> => {
+  const result = await Notification.find({ receiver: user.id })
+    .populate({
+      path: 'userId',
+      select: 'name email',
+    })
+    .populate({
+      path: 'driverId',
+      select: 'name phoneNumber email',
+    })
+
+    .populate({
+      path: 'receiver',
+      select: 'name email',
+    });
 
   const unreadCount = await Notification.countDocuments({
     receiver: user.id,
     read: false,
   });
 
-  const data: any = {
+  return {
     result,
     unreadCount,
   };
-
-  return data;
 };
 
 // read notifications only for user

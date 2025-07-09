@@ -7,7 +7,12 @@ const ContactUsRoutes = express.Router();
 
 ContactUsRoutes.post(
   '/',
-  auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  auth(
+    USER_ROLES.USER,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN,
+    USER_ROLES.DRIVER
+  ),
   // validateRequest(inquiryValidations.verifyInquiryZodSchema),
   contactUsController.createContactUs
 ).get(

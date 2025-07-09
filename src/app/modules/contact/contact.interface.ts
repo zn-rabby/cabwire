@@ -4,5 +4,5 @@ export type TContactUs = {
   phone: string;
   subject: string;
   description: string;
-  status: boolean;
+  status?: boolean;
 };

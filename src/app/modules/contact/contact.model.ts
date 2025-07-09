@@ -22,7 +22,7 @@ const contactUsSchema = new Schema<TContactUs>(
     },
     status: {
       type: Boolean,
-      default: true,
+      default: false,
     },
   },
   { timestamps: true }
