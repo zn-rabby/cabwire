@@ -44,6 +44,10 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
       type: Boolean,
       default: false,
     },
+    rideAccept: {
+      type: Boolean,
+      default: true,
+    },
     type: {
       type: String,
       enum: ['ADMIN'],

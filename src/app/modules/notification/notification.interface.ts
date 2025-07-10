@@ -29,6 +29,7 @@ export type INotification = {
   pickupLocation?: ILocation;
   dropoffLocation?: ILocation;
   fare?: number;
+  rideAccept: boolean;
   distance?: number;
   duration?: number;
 };
