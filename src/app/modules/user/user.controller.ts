@@ -5,6 +5,8 @@ import { getSingleFilePath } from '../../../shared/getFilePath';
 import sendResponse from '../../../shared/sendResponse';
 import { UserService } from './user.service';
 import httpStatus from 'http-status';
+import config from '../../../config';
+import bcrypt from 'bcrypt';
 
 const createUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -52,27 +54,29 @@ const updateProfile = catchAsync(
   }
 );
 
-const updateProfileByEmail = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const email = req.params.email;
-    let image = getSingleFilePath(req.files, 'image');
+const updateProfileByEmail = catchAsync(async (req: Request, res: Response) => {
+  const email = req.params.email;
 
-    const data = {
-      email, // ✅ path theke ashche
-      image,
-      ...req.body,
-    };
-
-    const result = await UserService.updateProfileByEmailToDB(data);
-
-    sendResponse(res, {
-      success: true,
-      statusCode: StatusCodes.OK,
-      message: 'User profile updated successfully by email',
-      data: result,
-    });
+  if ('role' in req.body) {
+    delete req.body.role;
   }
-);
+
+  if (req.body.password) {
+    req.body.password = await bcrypt.hash(
+      req.body.password,
+      Number(config.bcrypt_salt_rounds)
+    );
+  }
+
+  const result = await UserService.updateProfileByEmailToDB(email, req.body);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Profile updated successfully by email',
+    data: result,
+  });
+});
 
 const updateStripeAccountIdByEmail = catchAsync(
   async (req: Request, res: Response) => {

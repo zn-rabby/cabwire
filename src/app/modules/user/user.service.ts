@@ -75,32 +75,28 @@ const updateProfileToDB = async (
 };
 
 const updateProfileByEmailToDB = async (
-  payload: Partial<IUser> & { email: string }
-): Promise<Partial<IUser | null>> => {
-  const { email, image, ...rest } = payload;
-
+  email: string,
+  payload: Partial<IUser>
+): Promise<IUser | null> => {
   const isExistUser = await User.findOne({ email });
+
   if (!isExistUser) {
     throw new ApiError(
-      StatusCodes.BAD_REQUEST,
+      StatusCodes.NOT_FOUND,
       "User with this email doesn't exist!"
     );
   }
 
-  if (image && isExistUser.image) {
+  // 🔗 Remove old image if new image is coming
+  if (payload.image && isExistUser.image) {
     unlinkFile(isExistUser.image);
   }
 
-  const updatedDoc = await User.findOneAndUpdate(
-    { email },
-    {
-      ...rest,
-      ...(image && { image }),
-    },
-    { new: true }
-  );
+  const updatedUser = await User.findOneAndUpdate({ email }, payload, {
+    new: true,
+  });
 
-  return updatedDoc;
+  return updatedUser;
 };
 
 const updateStripeAccountIdByEmail = async (

@@ -33,3 +33,12 @@ export const getMultipleFilesPath = (files: any, folderName: IFolderName) => {
 
   return undefined;
 };
+
+// Handling multiple files
+export const parseMultipleFileData = (files: any, folderName: IFolderName) => {
+  const folderFiles = files && files[folderName];
+  if (folderFiles && Array.isArray(folderFiles)) {
+    return folderFiles.map((file: any) => `/${folderName}/${file.filename}`);
+  }
+  return undefined;
+};

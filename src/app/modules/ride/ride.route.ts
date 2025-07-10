@@ -39,7 +39,7 @@ router.patch(
 );
 
 router.patch(
-  '/cancel-ride-driver/:id',
+  '/cancel-ride/:id',
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
   RideController.cancelRide
 );
