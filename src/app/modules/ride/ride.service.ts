@@ -389,7 +389,7 @@ const acceptRide = async (rideId: string, driverId: string) => {
         rideId: updatedRide.id.toString(), // ✅ this is the fix!
         text: 'Ride accepted successfully',
         event: 'ride-accepted',
-        status: rideAccept,
+        rideAccept: rideAccept,
       });
     } else {
       console.warn('No userId found in updatedRide');
@@ -581,6 +581,7 @@ const continueRide = async (rideId: string, driverId: string) => {
       driverId,
       rideId: ride._id,
       text: 'Your ride is now in progress.',
+      rideProgress: true,
     });
   } catch (err) {
     console.error('Notification sending failed:', err);

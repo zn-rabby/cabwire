@@ -29,9 +29,10 @@ export type INotification = {
   pickupLocation?: ILocation;
   dropoffLocation?: ILocation;
   fare?: number;
-  rideAccept: boolean;
+  rideAccept?: boolean;
   distance?: number;
   duration?: number;
+  rideProgress?: boolean;
 };
 
 export type NotificationModel = Model<INotification>;

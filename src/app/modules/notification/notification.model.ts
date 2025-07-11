@@ -46,7 +46,7 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
     },
     rideAccept: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     type: {
       type: String,
@@ -64,6 +64,10 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
     fare: { type: Number },
     distance: { type: Number },
     duration: { type: Number },
+    rideProgress: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
