@@ -47,7 +47,7 @@ router
     }
   );
 router.patch(
-  '/update-profile-by-email/:email',
+  '/update-vehicles-by-email/:email',
   fileUploadHandler(),
   (req: Request, res: Response, next: NextFunction) => {
     const image = getSingleFilePath(req.files, 'image');
@@ -59,7 +59,7 @@ router.patch(
   UserController.updateProfileVehiclesByEmail
 );
 router.patch(
-  '/update-profile-by-email/:email',
+  '/update-driver-by-email/:email',
   fileUploadHandler(),
   (req: Request, res: Response, next: NextFunction) => {
     const image = getSingleFilePath(req.files, 'image');
