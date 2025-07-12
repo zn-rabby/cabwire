@@ -689,12 +689,14 @@ const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
       'Ride state changed during verification'
     );
   }
+  const rideComplete = true;
   // Emit ride-completed event
   if (updatedRide._id) {
     sendNotifications({
       rideId: updatedRide._id,
       receiver: updatedRide.userId,
       text: 'Ride completed successfully',
+      rideComplete: rideComplete,
     });
   }
 
@@ -839,6 +841,15 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
   };
 };
 
+const getRidesByUserIdFromDB = async (userId: string): Promise<IRide[]> => {
+  const rides = await Ride.find({
+    userId,
+    rideStatus: 'completed',
+  }).populate('driverId userId');
+
+  return rides;
+};
+
 export const RideService = {
   findNearestOnlineRiders,
   updateDriverLocation,
@@ -849,4 +860,5 @@ export const RideService = {
   requestCloseRide,
   completeRideWithOtp,
   createRidePayment,
+  getRidesByUserIdFromDB,
 };

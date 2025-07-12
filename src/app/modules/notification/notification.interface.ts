@@ -30,6 +30,7 @@ export type INotification = {
   dropoffLocation?: ILocation;
   fare?: number;
   rideAccept?: boolean;
+  rideComplete?: boolean;
   distance?: number;
   duration?: number;
   rideProgress?: boolean;

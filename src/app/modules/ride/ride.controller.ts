@@ -211,6 +211,18 @@ const createRidePayment = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getRidesByUserId = catchAsync(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  const result = await RideService.getRidesByUserIdFromDB(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Rides retrieved successfully',
+    data: result,
+  });
+});
+
 export const RideController = {
   findNearestOnlineRiders,
   updateDriverLocation,
@@ -221,4 +233,5 @@ export const RideController = {
   requestCloseRide,
   completeRideWithOtp,
   createRidePayment,
+  getRidesByUserId,
 };

@@ -21,7 +21,6 @@ router.get(
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   PaymentController.getAllPayments
 );
-router.get('/check-balance', PaymentController.checkStripeBalance);
 
 router.get(
   '/driver',
@@ -38,7 +37,10 @@ router.get('/:userId', auth(), PaymentController.getAllPaymentsByUserId);
 router.post('/:userId/withdraw', auth(), PaymentController.withdrawToStripe);
 
 // connect stripe account
+router.get('/check-balance', PaymentController.checkStripeBalance);
+
 router.post('/create-connect-link', auth(USER_ROLES.DRIVER), createConnectLink);
+
 router.post(
   '/create-account',
   auth(

@@ -48,6 +48,10 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
       type: Boolean,
       default: false,
     },
+    rideComplete: {
+      type: Boolean,
+      default: false,
+    },
     type: {
       type: String,
       enum: ['ADMIN'],
