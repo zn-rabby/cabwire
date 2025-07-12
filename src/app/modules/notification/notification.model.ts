@@ -72,6 +72,11 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
       type: Boolean,
       default: false,
     },
+    serviceName: {
+      type: String,
+      enum: ['car', 'emergency-car', 'rental-car', 'cabwire-share', 'package'],
+      required: false,
+    },
   },
   {
     timestamps: true,

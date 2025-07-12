@@ -33,6 +33,12 @@ export type INotification = {
   rideComplete?: boolean;
   distance?: number;
   duration?: number;
+  serviceName?:
+    | 'car'
+    | 'emergency-car'
+    | 'rental-car'
+    | 'cabwire-share'
+    | 'package';
   rideProgress?: boolean;
 };
 

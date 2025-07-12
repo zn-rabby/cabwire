@@ -195,12 +195,140 @@ const updateDriverLocation = async (
 // };
 
 // create ride
+// const createRideToDB = async (
+//   payload: Partial<IRide>,
+//   userObjectId: Types.ObjectId
+// ) => {
+//   const pickup = payload.pickupLocation;
+//   const dropoff = payload.dropoffLocation;
+
+//   console.log('service find', payload.service);
+
+//   // Validate input
+//   if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Pickup and dropoff coordinates are required.'
+//     );
+//   }
+
+//   if (typeof payload.duration !== 'number' || payload.duration <= 0) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Duration must be a positive number.'
+//     );
+//   }
+
+//   if (!payload.service || !payload.category) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Service and category are required.'
+//     );
+//   }
+
+//   // Fetch service & category
+//   const [service, category] = await Promise.all([
+//     Service.findById(payload.service),
+//     Category.findById(payload.category),
+//   ]);
+//   if (!service || !category) {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Invalid service or category ID.'
+//     );
+//   }
+
+//   const distance = calculateDistance(pickup, dropoff);
+
+//   let fare: number;
+//   try {
+//     fare = calculateFare({
+//       service,
+//       category,
+//       distance,
+//       duration: payload.duration,
+//     });
+//   } catch (error) {
+//     throw new ApiError(
+//       StatusCodes.INTERNAL_SERVER_ERROR,
+//       'Failed to calculate fare: ' +
+//         (error instanceof Error ? error.message : '')
+//     );
+//   }
+
+//   // Create ride
+//   const ride = await Ride.create({
+//     ...payload,
+//     userId: userObjectId,
+//     distance,
+//     fare,
+//     rideStatus: 'requested',
+//     paymentStatus: 'pending',
+//   });
+
+//   // Find nearby drivers (within 5km)
+//   const nearestDrivers = await findNearestOnlineRiders({
+//     coordinates: [pickup.lng, pickup.lat],
+//   });
+
+//   if (!nearestDrivers.length) {
+//     throw new ApiError(
+//       StatusCodes.NOT_FOUND,
+//       'No available drivers near your pickup location.'
+//     );
+//   }
+
+//   // Emit socket events to each driver room
+//   const io = global.io;
+
+//   if (ride?._id) {
+//     const rideIdString = ride._id.toString(); // ✅ Fix: convert to string
+
+//     nearestDrivers.forEach(driver => {
+//       const driverId = driver?._id?.toString();
+//       console.log('🔔 Sending notification to driver:', driverId);
+//       console.log('🚗 Ride ID:', rideIdString);
+
+//       sendNotifications({
+//         text: 'Ride created successfully',
+//         rideId: rideIdString,
+
+//         userId: ride.userId.toString(),
+//         receiver: driverId,
+//         pickupLocation: ride.pickupLocation,
+//         dropoffLocation: ride.dropoffLocation,
+//         status: ride.rideStatus,
+//         fare: ride.fare,
+//         distance: ride.distance,
+//         duration: ride.duration,
+//         event: 'ride-requested',
+//       });
+//     });
+//   }
+
+//   return ride;
+// };
+
+// import { Types } from 'mongoose';
+// import { Request, Response } from 'express';
+// import { StatusCodes } from 'http-status-codes';
+// import ApiError from '../errors/ApiError';
+// import Ride, { IRide } from '../models/Ride';
+// import Service from '../models/Service';
+// import Category from '../models/Category';
+// import { calculateDistance } from '../utils/calculateDistance';
+// import { calculateFare } from '../utils/calculateFare';
+// import { findNearestOnlineRiders } from '../services/driverService';
+// import { sendNotifications } from '../services/notificationService';
+
 const createRideToDB = async (
   payload: Partial<IRide>,
   userObjectId: Types.ObjectId
-) => {
+): Promise<IRide> => {
   const pickup = payload.pickupLocation;
   const dropoff = payload.dropoffLocation;
+
+  console.log('service find', payload.service);
 
   // Validate input
   if (!pickup?.lat || !pickup?.lng || !dropoff?.lat || !dropoff?.lng) {
@@ -224,11 +352,12 @@ const createRideToDB = async (
     );
   }
 
-  // Fetch service & category
+  // Fetch service & category documents
   const [service, category] = await Promise.all([
     Service.findById(payload.service),
     Category.findById(payload.category),
   ]);
+
   if (!service || !category) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -276,21 +405,21 @@ const createRideToDB = async (
     );
   }
 
-  // Emit socket events to each driver room
-  const io = global.io;
-
+  // Emit socket events and send notifications to drivers
   if (ride?._id) {
-    const rideIdString = ride._id.toString(); // ✅ Fix: convert to string
+    const rideIdString = ride._id.toString();
+    const serviceName = service.serviceName; // service name from DB
+    console.log(11, serviceName);
 
     nearestDrivers.forEach(driver => {
       const driverId = driver?._id?.toString();
+
       console.log('🔔 Sending notification to driver:', driverId);
       console.log('🚗 Ride ID:', rideIdString);
 
       sendNotifications({
-        text: 'Ride created successfully',
+        text: `Ride created successfully with service: ${serviceName}`,
         rideId: rideIdString,
-
         userId: ride.userId.toString(),
         receiver: driverId,
         pickupLocation: ride.pickupLocation,
@@ -299,6 +428,7 @@ const createRideToDB = async (
         fare: ride.fare,
         distance: ride.distance,
         duration: ride.duration,
+        serviceName, // include serviceName in notification payload
         event: 'ride-requested',
       });
     });
@@ -306,6 +436,8 @@ const createRideToDB = async (
 
   return ride;
 };
+
+export default createRideToDB;
 
 // accept ride
 // const acceptRide = async (rideId: string, driverId: string) => {
