@@ -79,7 +79,7 @@ const updateProfileByEmailToDB = async (
   payload: Partial<IUser>
 ): Promise<IUser | null> => {
   const isExistUser = await User.findOne({ email });
-
+  console.log('payload', payload);
   if (!isExistUser) {
     throw new ApiError(
       StatusCodes.NOT_FOUND,
@@ -92,9 +92,24 @@ const updateProfileByEmailToDB = async (
     unlinkFile(isExistUser.image);
   }
 
-  const updatedUser = await User.findOneAndUpdate({ email }, payload, {
-    new: true,
-  });
+  const updatedUser = await User.findOneAndUpdate(
+    { email },
+    {
+      ...(payload.image && {
+        'driverLicense.uploadDriversLicense': payload.image,
+      }),
+      ...(payload.driverLicense?.licenseNumber && {
+        'driverLicense.licenseNumber': payload.driverLicense.licenseNumber,
+      }),
+      ...(payload.driverLicense?.licenseExpiryDate && {
+        'driverLicense.licenseExpiryDate':
+          payload.driverLicense.licenseExpiryDate,
+      }),
+    },
+    {
+      new: true,
+    }
+  );
 
   return updatedUser;
 };
