@@ -79,6 +79,31 @@ const updateProfileByEmailToDB = async (
   payload: Partial<IUser>
 ): Promise<IUser | null> => {
   const isExistUser = await User.findOne({ email });
+
+  if (!isExistUser) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "User with this email doesn't exist!"
+    );
+  }
+
+  // 🔗 Remove old image if new image is coming
+  if (payload.image && isExistUser.image) {
+    unlinkFile(isExistUser.image);
+  }
+
+  const updatedUser = await User.findOneAndUpdate({ email }, payload, {
+    new: true,
+  });
+
+  return updatedUser;
+};
+
+const updateProfileDriverByEmailToDB = async (
+  email: string,
+  payload: Partial<IUser>
+): Promise<IUser | null> => {
+  const isExistUser = await User.findOne({ email });
   console.log('payload', payload);
   if (!isExistUser) {
     throw new ApiError(
@@ -419,6 +444,7 @@ export const UserService = {
   getUserProfileFromDB,
   updateProfileToDB,
   updateProfileByEmailToDB,
+  updateProfileDriverByEmailToDB,
   updateStripeAccountIdByEmail,
   updateUserOnlineStatusByEmail,
   deleteUser,
