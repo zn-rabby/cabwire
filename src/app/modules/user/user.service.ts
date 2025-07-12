@@ -138,6 +138,63 @@ const updateProfileDriverByEmailToDB = async (
 
   return updatedUser;
 };
+const updateProfileVehiclesByEmailToDB = async (
+  email: string,
+  payload: Partial<IUser>
+): Promise<IUser | null> => {
+  const isExistUser = await User.findOne({ email });
+  console.log('payload', payload);
+
+  if (!isExistUser) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "User with this email doesn't exist!"
+    );
+  }
+
+  // 🔗 Remove old image if new image is coming
+  if (
+    payload.driverVehicles?.vehiclesPicture &&
+    isExistUser.driverVehicles?.vehiclesPicture
+  ) {
+    unlinkFile(isExistUser.driverVehicles.vehiclesPicture);
+  }
+
+  const updatedUser = await User.findOneAndUpdate(
+    { email },
+    {
+      ...(payload.driverVehicles?.vehiclesMake && {
+        'driverVehicles.vehiclesMake': payload.driverVehicles.vehiclesMake,
+      }),
+      ...(payload.driverVehicles?.vehiclesModel && {
+        'driverVehicles.vehiclesModel': payload.driverVehicles.vehiclesModel,
+      }),
+      ...(payload.driverVehicles?.vehiclesYear && {
+        'driverVehicles.vehiclesYear': payload.driverVehicles.vehiclesYear,
+      }),
+      ...(payload.driverVehicles?.vehiclesRegistrationNumber && {
+        'driverVehicles.vehiclesRegistrationNumber':
+          payload.driverVehicles.vehiclesRegistrationNumber,
+      }),
+      ...(payload.driverVehicles?.vehiclesInsuranceNumber && {
+        'driverVehicles.vehiclesInsuranceNumber':
+          payload.driverVehicles.vehiclesInsuranceNumber,
+      }),
+      ...(payload.image && {
+        'driverVehicles.vehiclesPicture': payload.image,
+      }),
+      ...(payload.driverVehicles?.vehiclesCategory && {
+        'driverVehicles.vehiclesCategory':
+          payload.driverVehicles.vehiclesCategory,
+      }),
+    },
+    {
+      new: true,
+    }
+  );
+
+  return updatedUser;
+};
 
 const updateStripeAccountIdByEmail = async (
   email: string,
@@ -445,6 +502,7 @@ export const UserService = {
   updateProfileToDB,
   updateProfileByEmailToDB,
   updateProfileDriverByEmailToDB,
+  updateProfileVehiclesByEmailToDB,
   updateStripeAccountIdByEmail,
   updateUserOnlineStatusByEmail,
   deleteUser,

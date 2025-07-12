@@ -106,6 +106,34 @@ const updateProfileDriverByEmail = catchAsync(
     });
   }
 );
+const updateProfileVehiclesByEmail = catchAsync(
+  async (req: Request, res: Response) => {
+    const email = req.params.email;
+
+    if ('role' in req.body) {
+      delete req.body.role;
+    }
+
+    if (req.body.password) {
+      req.body.password = await bcrypt.hash(
+        req.body.password,
+        Number(config.bcrypt_salt_rounds)
+      );
+    }
+
+    const result = await UserService.updateProfileVehiclesByEmailToDB(
+      email,
+      req.body
+    );
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: 'Profile updated successfully by email',
+      data: result,
+    });
+  }
+);
 
 const updateStripeAccountIdByEmail = catchAsync(
   async (req: Request, res: Response) => {
@@ -358,6 +386,7 @@ export const UserController = {
   updateProfile,
   updateProfileByEmail,
   updateProfileDriverByEmail,
+  updateProfileVehiclesByEmail,
   updateStripeAccountIdByEmail,
   updateUserOnlineStatusByEmail,
   deleteProfile,

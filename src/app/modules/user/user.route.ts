@@ -56,8 +56,21 @@ router.patch(
     next();
   },
   validateRequest(UserValidation.updateUserZodSchema),
+  UserController.updateProfileVehiclesByEmail
+);
+router.patch(
+  '/update-profile-by-email/:email',
+  fileUploadHandler(),
+  (req: Request, res: Response, next: NextFunction) => {
+    const image = getSingleFilePath(req.files, 'image');
+    const data = JSON.parse(req.body.data);
+    req.body = { image, ...data };
+    next();
+  },
+  validateRequest(UserValidation.updateUserZodSchema),
   UserController.updateProfileDriverByEmail
 );
+
 router.patch(
   '/update-profile-by-email/:email',
   fileUploadHandler(),
