@@ -166,7 +166,7 @@ router.patch(
   UserController.driverStatusUpdate
 );
 router.patch(
-  '/approve',
+  '/driver-approve',
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   UserController.driverStatusApproveAll
 );

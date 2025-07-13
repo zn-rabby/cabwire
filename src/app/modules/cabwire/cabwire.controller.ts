@@ -26,7 +26,18 @@ const createRide = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getAllCabwireRides = catchAsync(async (req: Request, res: Response) => {
+  const result = await CabwireService.getAllCabwireRidesFromDB();
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'All Cabwire rides fetched successfully',
+    data: result,
+  });
+});
 
 export const CabwireController = {
   createRide,
+  getAllCabwireRides,
 };

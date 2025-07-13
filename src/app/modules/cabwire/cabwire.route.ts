@@ -15,5 +15,15 @@ router.post(
   ),
   CabwireController.createRide
 );
+router.get(
+  '/cabwires',
+  auth(
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN,
+    USER_ROLES.DRIVER,
+    USER_ROLES.USER
+  ),
+  CabwireController.getAllCabwireRides
+);
 
 export const CabwireRoutes = router;

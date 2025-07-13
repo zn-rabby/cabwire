@@ -64,6 +64,14 @@ const createRideByDriver = async (
   return ride;
 };
 
+const getAllCabwireRidesFromDB = async (): Promise<ICabwire[]> => {
+  const rides = await CabwireModel.find()
+    .populate('driverId')
+    .sort({ createdAt: -1 });
+
+  return rides;
+};
 export const CabwireService = {
   createRideByDriver,
+  getAllCabwireRidesFromDB,
 };
