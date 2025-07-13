@@ -7,14 +7,7 @@ export const locationSchema = {
   address: { type: String },
 };
 
-//  rideId: ride._id,
-//     userId: ride.id,
-//     pickupLocation: ride.pickupLocation,
-//     dropoffLocation: ride.dropoffLocation,
-//     status: ride.rideStatus,
-//     fare: ride.fare,
-//     distance: ride.distance,
-//     duration: ride.duration,
+
 const notificationSchema = new Schema<INotification, NotificationModel>(
   {
     text: {
@@ -29,7 +22,12 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
     rideId: {
       type: Schema.Types.ObjectId,
       ref: 'Ride',
-      required: true,
+      required: false,
+    },
+    packgeId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Package',
+      required: false,
     },
     referenceId: {
       type: String,

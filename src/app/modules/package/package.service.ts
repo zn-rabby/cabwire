@@ -63,9 +63,9 @@ const createPackageToDB = async (
     );
   }
 
-  // 📍 Find nearest online drivers within 5km
+  // Find nearby drivers (within 5km)
   const nearestDrivers = await findNearestOnlineRiders({
-    coordinates: [pickup.lng, pickup.lat], // Consistent with ride system
+    coordinates: [pickup.lng, pickup.lat],
   });
 
   if (!nearestDrivers.length) {
@@ -79,17 +79,19 @@ const createPackageToDB = async (
 
   if (createdPackage._id && io) {
     nearestDrivers.forEach(driver => {
+      const driverId = driver?._id?.toString();
       sendNotifications({
-        text: 'New package delivery request available',
-        packageId: createdPackage._id,
-        userId: createdPackage.userId,
-        receiver: driver._id, // socket room: driver-specific
+        text: 'New Package delivery request available',
+        receiver: driverId,
+        // packageId: createdPackage._id,
+        // userId: createdPackage.userId,
+        // receiver: driver._id, // socket room: driver-specific
         pickupLocation: createdPackage.pickupLocation,
         dropoffLocation: createdPackage.dropoffLocation,
         status: createdPackage.packageStatus,
         fare: createdPackage.fare,
         distance: createdPackage.distance,
-        event: 'package-requested', // custom event name
+        // event: 'package-requested', // custom event name
       });
     });
   }
@@ -120,7 +122,7 @@ const acceptPackageByDriver = async (
 
   await existing.save();
   sendNotifications({
-    text: '📦 Your package delivery has been accepted by a driver!',
+    text: '📦 Your Package delivery has been accepted by a driver!',
     packageId: existing._id,
     userId: existing.userId,
     receiver: existing.userId?.toString(), // socket room/user ID
@@ -202,7 +204,7 @@ const markPackageAsDelivered = async (
 
   // 🔔 Send real-time socket notification to the user
   sendNotifications({
-    text: '✅ Your package has been successfully delivered!',
+    text: '✅ Your Package has been successfully delivered!',
     packageId: pkg._id,
     userId: pkg.userId,
     receiver: pkg.userId?.toString(), // Socket room or user ID
@@ -297,12 +299,11 @@ const completePackageWithOtp = async (rideId: string, enteredOtp: string) => {
   sendNotifications({
     rideId: updatedRide._id,
     receiver: updatedRide._id,
-    text: 'Ride completed successfully',
+    text: 'Package deleverd completed successfully',
   });
 
   return updatedRide;
 };
-
 
 const createPackagePayment = async (payload: {
   packageId: string;

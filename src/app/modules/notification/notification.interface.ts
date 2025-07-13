@@ -3,16 +3,7 @@ export interface ILocation {
   lat?: number;
   lng?: number;
   address?: string;
-}
-
-//  rideId: ride._id,
-//     userId: ride.id,
-//     pickupLocation: ride.pickupLocation,
-//     dropoffLocation: ride.dropoffLocation,
-//     status: ride.rideStatus,
-//     fare: ride.fare,
-//     distance: ride.distance,
-//     duration: ride.duration,
+} 
 
 export type INotification = {
   text: string;
@@ -25,6 +16,7 @@ export type INotification = {
   // for ride
   driverId?: string;
   rideId?: string;
+  packgeId?: string;
   userId?: string;
   pickupLocation?: ILocation;
   dropoffLocation?: ILocation;
