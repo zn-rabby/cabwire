@@ -36,17 +36,16 @@ const createPrivacyPolicyToDB = async (payload: IRule) => {
   }
 };
 
-const getPrivacyPolicyFromDB = async () => {
-  const result = await Rule.findOne({ type: 'privacy' });
+const getPrivacyPolicyFromDB = async (targetFor: 'user' | 'driver') => {
+  const result = await Rule.findOne({ type: 'privacy', for: targetFor });
   if (!result) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "Privacy policy doesn't exist!"
+      `Privacy policy for ${targetFor} doesn't exist!`
     );
   }
   return result;
 };
-
 //terms and conditions
 
 const createTermsAndConditionToDB = async (payload: IRule) => {
@@ -79,12 +78,12 @@ const createTermsAndConditionToDB = async (payload: IRule) => {
   }
 };
 
-const getTermsAndConditionFromDB = async () => {
-  const result = await Rule.findOne({ type: 'terms' });
+const getTermsAndConditionFromDB = async (targetFor: 'user' | 'driver') => {
+  const result = await Rule.findOne({ type: 'terms', for: targetFor });
   if (!result) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "Terms and conditions doesn't  exist!"
+      `Terms and conditions for ${targetFor} don't exist!`
     );
   }
   return result;

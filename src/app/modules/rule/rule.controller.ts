@@ -18,12 +18,15 @@ const createPrivacyPolicy = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getPrivacyPolicy = catchAsync(async (req: Request, res: Response) => {
-  const result = await RuleService.getPrivacyPolicyFromDB();
+  // get 'for' from query params, default to 'user' if not provided
+  const targetFor = (req.query.for as 'user' | 'driver') || 'user';
+
+  const result = await RuleService.getPrivacyPolicyFromDB(targetFor);
 
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: 'Privacy policy retrieved successfully',
+    message: `Privacy policy for ${targetFor} retrieved successfully`,
     data: result,
   });
 });
@@ -44,12 +47,14 @@ const createTermsAndCondition = catchAsync(
 );
 
 const getTermsAndCondition = catchAsync(async (req: Request, res: Response) => {
-  const result = await RuleService.getTermsAndConditionFromDB();
+  const targetFor = (req.query.for as 'user' | 'driver') || 'user';
+
+  const result = await RuleService.getTermsAndConditionFromDB(targetFor);
 
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: 'Terms and conditions retrieved successfully',
+    message: `Terms and conditions for ${targetFor} retrieved successfully`,
     data: result,
   });
 });
