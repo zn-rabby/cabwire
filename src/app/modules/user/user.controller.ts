@@ -176,6 +176,7 @@ const updateUserOnlineStatusByEmail = catchAsync(
 const deleteProfile = catchAsync(async (req, res) => {
   const { id }: any = req.user;
   const { password } = req.body;
+
   const isUserVerified = await UserService.verifyUserPassword(id, password);
   if (!isUserVerified) {
     return sendResponse(res, {

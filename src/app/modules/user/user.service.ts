@@ -254,9 +254,8 @@ const deleteUser = async (id: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  await User.findByIdAndUpdate(id, {
-    $set: { isDeleted: true },
-  });
+  // 🚨 Permanently delete user from DB
+  await User.findByIdAndDelete(id);
 
   return true;
 };
