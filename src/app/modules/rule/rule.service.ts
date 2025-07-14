@@ -4,23 +4,34 @@ import { Rule } from './rule.model';
 import ApiError from '../../../errors/ApiError';
 
 //privacy policy
+
 const createPrivacyPolicyToDB = async (payload: IRule) => {
-  // check if privacy policy exist or not
-  const isExistPrivacy = await Rule.findOne({ type: 'privacy' });
+  // Destructure payload to get the target audience (driver or user)
+  const { content, for: targetFor } = payload;
+
+  // Check if privacy policy exists for that target (driver/user)
+  const isExistPrivacy = await Rule.findOne({
+    type: 'privacy',
+    for: targetFor,
+  });
 
   if (isExistPrivacy) {
-    // update privacy is exist
+    // Update if exists
     const result = await Rule.findOneAndUpdate(
-      { type: 'privacy' },
-      { content: payload?.content },
+      { type: 'privacy', for: targetFor },
+      { content },
       { new: true }
     );
-    const message = 'Privacy & Policy Updated successfully';
+    const message = `Privacy & Policy for ${targetFor} updated successfully`;
     return { message, result };
   } else {
-    // create new if not exist
-    const result = await Rule.create({ ...payload, type: 'privacy' });
-    const message = 'Privacy & Policy Created successfully';
+    // Create new if not exists
+    const result = await Rule.create({
+      ...payload,
+      type: 'privacy',
+      for: targetFor,
+    });
+    const message = `Privacy & Policy for ${targetFor} created successfully`;
     return { message, result };
   }
 };
@@ -37,19 +48,33 @@ const getPrivacyPolicyFromDB = async () => {
 };
 
 //terms and conditions
+
 const createTermsAndConditionToDB = async (payload: IRule) => {
-  const isExistTerms = await Rule.findOne({ type: 'terms' });
+  const { content, for: targetFor } = payload;
+
+  // Check if terms and conditions exist for the target audience (driver/user)
+  const isExistTerms = await Rule.findOne({
+    type: 'terms',
+    for: targetFor,
+  });
+
   if (isExistTerms) {
+    // Update if exists
     const result = await Rule.findOneAndUpdate(
-      { type: 'terms' },
-      { content: payload?.content },
+      { type: 'terms', for: targetFor },
+      { content },
       { new: true }
     );
-    const message = 'Terms And Condition Updated successfully';
+    const message = `Terms and Conditions for ${targetFor} updated successfully`;
     return { message, result };
   } else {
-    const result = await Rule.create({ ...payload, type: 'terms' });
-    const message = 'Terms And Condition Created Successfully';
+    // Create new if not exists
+    const result = await Rule.create({
+      ...payload,
+      type: 'terms',
+      for: targetFor,
+    });
+    const message = `Terms and Conditions for ${targetFor} created successfully`;
     return { message, result };
   }
 };

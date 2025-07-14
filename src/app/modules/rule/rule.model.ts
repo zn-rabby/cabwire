@@ -11,6 +11,11 @@ const ruleSchema = new Schema<IRule, RuleModel>({
     enum: ['privacy', 'terms', 'about'],
     select: 0,
   },
+  for: {
+    type: String,
+    enum: ['driver', 'user'],
+    required: true,
+  },
 });
 
 export const Rule = model<IRule, RuleModel>('Rule', ruleSchema);
