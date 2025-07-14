@@ -2,7 +2,6 @@ import express from 'express';
 import auth from '../../middlewares/auth';
 import { USER_ROLES } from '../../../enums/user';
 import { ReviewController } from './review.controller';
-import validateRequest from '../../middlewares/validateRequest'; 
 const router = express.Router();
 
 router.post(
