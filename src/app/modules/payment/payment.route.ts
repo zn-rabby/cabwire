@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { createConnectLink, PaymentController } from './payment.controller';
+import { PaymentController } from './payment.controller';
 import { USER_ROLES } from '../../../enums/user';
 import auth from '../../middlewares/auth';
 
 const router = Router();
 
-// only for dashbaord
+// ========================================== Dashboard ===================================
 router.get(
   '/total-erning',
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
@@ -21,6 +21,30 @@ router.get(
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   PaymentController.getAllPayments
 );
+// ========================================== Dashboard ===================================
+
+// ========================================== App ===================================
+
+// create account
+router.post(
+  '/create-account',
+  auth(
+    USER_ROLES.USER,
+    USER_ROLES.DRIVER,
+    USER_ROLES.ADMIN,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  PaymentController.createAccountToStripe
+);
+// connect account
+router.post(
+  '/create-connect-link',
+  auth(USER_ROLES.DRIVER),
+  PaymentController.createConnectLink
+);
+
+// check balance
+router.get('/check-balance', PaymentController.checkStripeBalance);
 
 router.get(
   '/driver',
@@ -34,23 +58,9 @@ router.get(
 );
 
 router.get('/:userId', auth(), PaymentController.getAllPaymentsByUserId);
+
+// withdorw
 router.post('/:userId/withdraw', auth(), PaymentController.withdrawToStripe);
-
-// connect stripe account
-router.get('/check-balance', PaymentController.checkStripeBalance);
-
-router.post('/create-connect-link', auth(USER_ROLES.DRIVER), createConnectLink);
-
-router.post(
-  '/create-account',
-  auth(
-    USER_ROLES.USER,
-    USER_ROLES.DRIVER,
-    USER_ROLES.ADMIN,
-    USER_ROLES.SUPER_ADMIN
-  ),
-  PaymentController.createAccountToStripe
-);
 
 router.post(
   '/transfer-to-driver',
@@ -62,5 +72,7 @@ router.post(
   ),
   PaymentController.transferToDriver
 );
+
+// ========================================== App ===================================
 
 export const PaymentRoutes = router;

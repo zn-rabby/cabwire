@@ -29,6 +29,8 @@ const paymentSchema = new Schema<IPayment>(
     adminId: { type: Schema.Types.ObjectId, ref: 'User' },
     driverAmount: { type: Number, required: true },
     adminAmount: { type: Number, required: true },
+    availableAmount: { type: Number, required: false },
+    totalWithdorwAmount: { type: Number, required: false },
   },
   { timestamps: true }
 );

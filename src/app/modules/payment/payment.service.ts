@@ -12,6 +12,8 @@ import { startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
 import QueryBuilder from '../../builder/QueryBuilder';
 
+// ========================================== extra ===================================
+
 const stripe = new Stripe(config.stripe_secret_key as string);
 
 export async function createOrGetStripeAccount(
@@ -59,234 +61,8 @@ export async function createStripeOnboardingLink(
   return accountLink.url;
 }
 
-// const getAllPayments = async () => {
-//   const payments = await stripe.balanceTransactions.list(); // optional: latest first
-//   return payments;
-// };
+// ========================================== Dashboard ===================================
 
-const getAllPaymentsWithDriver = async () => {
-  // Step 1: Get all drivers with stripeAccountId
-  const drivers = await User.find({
-    role: 'DRIVER',
-    stripeAccountId: { $exists: true },
-  });
-
-  const earnings = [];
-
-  for (const driver of drivers) {
-    // Step 2: Fetch balance transactions for each driver
-    const transactions = await stripe.balanceTransactions.list(
-      { limit: 100 }, // ✅ first param: filter options
-      { stripeAccount: driver.stripeAccountId } // ✅ second param: request options
-    );
-
-    // Step 3: Sum the amounts
-    const totalEarning = transactions.data.reduce((sum, tx) => {
-      return sum + tx.amount; // amount is in cents
-    }, 0);
-
-    earnings.push({
-      driverId: driver._id,
-      name: driver.name,
-      totalEarning: totalEarning / 100, // convert cents to dollar/taka
-      currency: transactions.data[0]?.currency || 'usd',
-    });
-  }
-
-  return earnings;
-};
-
-const getAllPaymentsByUserId = async (id: string) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ID');
-  }
-
-  const objectId = new mongoose.Types.ObjectId(id);
-
-  // Find payments where the driverId or adminId matches the provided ID
-  const payments = await Payment.find({
-    $or: [{ driverId: objectId }, { adminId: objectId }],
-  });
-
-  let totalDriverAmount = 0;
-  let totalAdminAmount = 0;
-
-  // Calculate respective amounts
-  payments.forEach((payment: any) => {
-    if (payment.driverId?.toString() === id) {
-      totalDriverAmount += payment.driverAmount || 0;
-    }
-
-    if (payment.adminId?.toString() === id) {
-      totalAdminAmount += payment.adminAmount || 0;
-    }
-  });
-
-  return {
-    totalDriverAmount,
-    totalAdminAmount,
-    payments,
-  };
-};
-
-export const transferToStripeAccount = async (
-  userId: string,
-  amount: number
-) => {
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid User ID');
-  }
-  if (amount <= 0) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Amount must be greater than zero'
-    );
-  }
-
-  // ইউজার খুঁজে নাও
-  // const user = await User.findById(userId);
-  const user = await User.findById(userId).select('+stripeAccountId');
-
-  if (!user) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
-  }
-  console.log('User ', user);
-  console.log('User ', user.stripeAccountId);
-
-  if (!user.stripeAccountId) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'User has no Stripe Account connected'
-    );
-  }
-
-  // ইউজারের পেমেন্টস গুলো নিয়ে আসো
-  const { totalDriverAmount, totalAdminAmount } = await getAllPaymentsByUserId(
-    userId
-  );
-  const availableAmount = totalDriverAmount + totalAdminAmount;
-
-  if (amount > availableAmount) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Insufficient balance for withdrawal'
-    );
-  }
-
-  // Stripe payout logic (Direct Transfer to Connected Account)
-  // নিচে `stripe.transfers.create` ইউজারকে টাকা পাঠাবে
-  // amount-টা cents এ দিতে হবে, তাই multiply 100 করলাম
-
-  const transfer = await stripe.transfers.create({
-    amount: Math.round(amount * 100), // cents
-    currency: 'usd', // তোমার currency অনুযায়ী পরিবর্তন করো
-    destination: user.stripeAccountId, // ইউজারের Stripe connected account ID
-    description: `Withdraw payment for user ${userId}`,
-  });
-
-  // এখানে চাইলে Payment অথবা Withdraw collection আপডেট করো
-  // উদাহরণ: withdraw রেকর্ড add করা বা Payment status update
-
-  return {
-    message: 'Amount transferred to Stripe account successfully',
-    transfer,
-  };
-};
-
-const createAccountToStripe = async (user: JwtPayload) => {
-  // Check if this user exists
-  const existingUser: any = await User.findById(user.id)
-    .select('+accountInformation')
-    .lean();
-  if (existingUser?.accountInformation?.accountUrl) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'You already connected your bank on Stripe.'
-    );
-  }
-
-  // Create account for Canada
-  const account = await stripe.accounts.create({
-    type: 'express',
-    country: 'CA',
-    email: user?.email,
-    business_type: 'individual',
-    capabilities: {
-      card_payments: { requested: true },
-      transfers: { requested: true },
-    },
-    individual: {
-      first_name: existingUser?.firstName,
-      last_name: existingUser?.lastName,
-      email: existingUser?.email,
-    },
-    business_profile: {
-      mcc: '7299',
-      product_description: 'Freelance services on demand',
-      url: 'https://yourplatform.com',
-    },
-  });
-
-  if (!account) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create account.');
-  }
-
-  // Create an account link for onboarding
-  const accountLink = await stripe.accountLinks.create({
-    account: account.id,
-    refresh_url: 'http://10.0.80.75:6008/failed',
-    return_url: 'https://10.0.80.75:6008/success',
-    type: 'account_onboarding',
-  });
-
-  // Update the user account with the Stripe account ID
-  const updateAccount = await User.findOneAndUpdate(
-    { _id: user.id },
-    { 'accountInformation.stripeAccountId': account.id },
-    { new: true }
-  );
-
-  if (!updateAccount) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to update account.');
-  }
-
-  return accountLink?.url; // Return the onboarding link
-};
-
-const transferToDriver = async (payload: {
-  driverId: string;
-  amount: number;
-}) => {
-  const { driverId, amount } = payload;
-
-  const driver = await User.findById(driverId);
-  console.log(driver);
-  if (!driver || !driver.stripeAccountId) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'Driver or Stripe account not found'
-    );
-  }
-
-  const transfer = await stripe.transfers.create({
-    amount: Math.round(amount * 100),
-    currency: 'usd',
-    destination: driver.stripeAccountId,
-    transfer_group: `group_driver_${driverId}`,
-  });
-
-  return transfer;
-};
-
-const getStripeBalance = async () => {
-  const balance = await stripe.balance.retrieve();
-  return {
-    available: balance.available,
-    pending: balance.pending,
-  };
-};
-
-// only for dasboard
 const getAllPayments = async (query: Record<string, unknown>) => {
   const paymentQuery = new QueryBuilder(
     Payment.find()
@@ -358,16 +134,271 @@ const getTotalRevenue = async () => {
   return monthlyRevenue;
 };
 
-export const PaymentService = {
-  getAllPaymentsByUserId,
-  getAllPaymentsWithDriver,
-  createAccountToStripe,
-  transferToDriver,
-  transferToStripeAccount,
-  getStripeBalance,
+// ========================================== Dashboard ===================================
+// ========================================== App ===================================
 
-  // only for dashbaorad
+const createAccountToStripe = async (user: JwtPayload) => {
+  // Check if this user exists
+  const existingUser: any = await User.findById(user.id)
+    .select('+accountInformation')
+    .lean();
+  if (existingUser?.accountInformation?.accountUrl) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'You already connected your bank on Stripe.'
+    );
+  }
+
+  // Create account for Canada
+  const account = await stripe.accounts.create({
+    type: 'express',
+    country: 'CA',
+    email: user?.email,
+    business_type: 'individual',
+    capabilities: {
+      card_payments: { requested: true },
+      transfers: { requested: true },
+    },
+    individual: {
+      first_name: existingUser?.firstName,
+      last_name: existingUser?.lastName,
+      email: existingUser?.email,
+    },
+    business_profile: {
+      mcc: '7299',
+      product_description: 'Freelance services on demand',
+      url: 'https://yourplatform.com',
+    },
+  });
+
+  if (!account) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create account.');
+  }
+
+  // Create an account link for onboarding
+  const accountLink = await stripe.accountLinks.create({
+    account: account.id,
+    refresh_url: 'http://10.0.80.75:6008/failed',
+    return_url: 'https://10.0.80.75:6008/success',
+    type: 'account_onboarding',
+  });
+
+  // Update the user account with the Stripe account ID
+  const updateAccount = await User.findOneAndUpdate(
+    { _id: user.id },
+    { 'accountInformation.stripeAccountId': account.id },
+    { new: true }
+  );
+
+  if (!updateAccount) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to update account.');
+  }
+
+  return accountLink?.url; // Return the onboarding link
+};
+
+const getStripeBalance = async () => {
+  const balance = await stripe.balance.retrieve();
+  return {
+    available: balance.available,
+    pending: balance.pending,
+  };
+};
+
+const getAllPaymentsWithDriver = async () => {
+  // Step 1: Get all drivers with stripeAccountId
+  const drivers = await User.find({
+    role: 'DRIVER',
+    stripeAccountId: { $exists: true },
+  });
+
+  const earnings = [];
+
+  for (const driver of drivers) {
+    // Step 2: Fetch balance transactions for each driver
+    const transactions = await stripe.balanceTransactions.list(
+      { limit: 100 }, // ✅ first param: filter options
+      { stripeAccount: driver.stripeAccountId } // ✅ second param: request options
+    );
+
+    // Step 3: Sum the amounts
+    const totalEarning = transactions.data.reduce((sum, tx) => {
+      return sum + tx.amount; // amount is in cents
+    }, 0);
+
+    earnings.push({
+      driverId: driver._id,
+      name: driver.name,
+      totalEarning: totalEarning / 100, // convert cents to dollar/taka
+      currency: transactions.data[0]?.currency || 'usd',
+    });
+  }
+
+  return earnings;
+};
+
+const getAllPaymentsByUserId = async (id: string) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ID');
+  }
+
+  const objectId = new mongoose.Types.ObjectId(id);
+  const now = new Date();
+
+  const payments = await Payment.find({
+    $or: [{ driverId: objectId }, { adminId: objectId }],
+  });
+
+  let totalDriverAmount = 0;
+  let totalAdminAmount = 0;
+  let todayEarning = 0;
+  let weeklyEarning = 0;
+  let monthlyEarning = 0;
+
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - 7);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  payments.forEach((payment: any) => {
+    const paidAt = payment.paidAt ? new Date(payment.paidAt) : null;
+    const amount =
+      payment.driverId?.toString() === id ? payment.driverAmount : 0;
+
+    if (payment.driverId?.toString() === id) {
+      totalDriverAmount += payment.driverAmount || 0;
+    }
+
+    if (payment.adminId?.toString() === id) {
+      totalAdminAmount += payment.adminAmount || 0;
+    }
+
+    if (paidAt) {
+      if (paidAt >= todayStart) {
+        todayEarning += amount;
+      }
+
+      if (paidAt >= weekStart) {
+        weeklyEarning += amount;
+      }
+
+      if (paidAt >= monthStart) {
+        monthlyEarning += amount;
+      }
+    }
+  });
+
+  return {
+    totalDriverAmount,
+    totalAdminAmount,
+    todayEarning,
+    weeklyEarning,
+    monthlyEarning,
+    payments,
+  };
+};
+export const transferToStripeAccount = async (
+  userId: string,
+  amount: number
+) => {
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid User ID');
+  }
+  if (amount <= 0) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Amount must be greater than zero'
+    );
+  }
+
+  // ইউজার খুঁজে নাও
+  // const user = await User.findById(userId);
+  const user = await User.findById(userId).select('+stripeAccountId');
+
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+  console.log('User ', user);
+  console.log('User ', user.stripeAccountId);
+
+  if (!user.stripeAccountId) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'User has no Stripe Account connected'
+    );
+  }
+
+  // ইউজারের পেমেন্টস গুলো নিয়ে আসো
+  const { totalDriverAmount, totalAdminAmount } = await getAllPaymentsByUserId(
+    userId
+  );
+  const availableAmount = totalDriverAmount + totalAdminAmount;
+
+  if (amount > availableAmount) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Insufficient balance for withdrawal'
+    );
+  }
+
+  // Stripe payout logic (Direct Transfer to Connected Account)
+  // নিচে `stripe.transfers.create` ইউজারকে টাকা পাঠাবে
+  // amount-টা cents এ দিতে হবে, তাই multiply 100 করলাম
+
+  const transfer = await stripe.transfers.create({
+    amount: Math.round(amount * 100), // cents
+    currency: 'usd', // তোমার currency অনুযায়ী পরিবর্তন করো
+    destination: user.stripeAccountId, // ইউজারের Stripe connected account ID
+    description: `Withdraw payment for user ${userId}`,
+  });
+
+  // এখানে চাইলে Payment অথবা Withdraw collection আপডেট করো
+  // উদাহরণ: withdraw রেকর্ড add করা বা Payment status update
+
+  return {
+    message: 'Amount transferred to Stripe account successfully',
+    transfer,
+  };
+};
+
+const transferToDriver = async (payload: {
+  driverId: string;
+  amount: number;
+}) => {
+  const { driverId, amount } = payload;
+
+  const driver = await User.findById(driverId);
+  console.log(driver);
+  if (!driver || !driver.stripeAccountId) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Driver or Stripe account not found'
+    );
+  }
+
+  const transfer = await stripe.transfers.create({
+    amount: Math.round(amount * 100),
+    currency: 'usd',
+    destination: driver.stripeAccountId,
+    transfer_group: `group_driver_${driverId}`,
+  });
+
+  return transfer;
+};
+
+export const PaymentService = {
+  // dashbaorad
   getAllPayments,
   getAllEarninng,
   getTotalRevenue,
+
+  // app
+  createAccountToStripe,
+  getStripeBalance,
+
+  getAllPaymentsByUserId,
+  getAllPaymentsWithDriver,
+
+  transferToDriver,
+  transferToStripeAccount,
 };

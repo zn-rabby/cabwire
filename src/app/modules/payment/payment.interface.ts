@@ -17,5 +17,7 @@ export interface IPayment extends Document {
   adminId?: Types.ObjectId;
 
   driverAmount: number;
+  availableAmount: number;
+  totalWithdorwAmount: number;
   adminAmount: number;
 }
