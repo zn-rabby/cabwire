@@ -13,6 +13,8 @@ import { sendNotifications } from '../../../util/notificaton';
 import { IPayment } from '../payment/payment.interface';
 import stripe from '../../../config/stripe';
 import { Payment } from '../payment/payment.model';
+import { IChat } from '../chat/chat.interface';
+import { Chat } from '../chat/chat.model';
 
 // find nearest riders
 export const findNearestOnlineRiders = async (location: {
@@ -201,8 +203,8 @@ const createRideToDB = async (
   return ride;
 };
 
-
 const acceptRide = async (rideId: string, driverId: string) => {
+  // 1. Find ride
   const ride = await Ride.findById(rideId);
 
   if (!ride || ride.rideStatus !== 'requested') {
@@ -212,8 +214,26 @@ const acceptRide = async (rideId: string, driverId: string) => {
     );
   }
 
-  let updatedRide;
+  // 2. Get userId from ride
+  const userId = ride.userId?.toString();
+  if (!userId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'User ID not found in ride');
+  }
 
+  const participants = [userId, driverId];
+
+  // 3. Check if chat exists
+  let chat: IChat | null = await Chat.findOne({
+    participants: { $all: participants, $size: 2 },
+  });
+
+  // 4. If chat doesn't exist, create it
+  if (!chat) {
+    chat = await Chat.create({ participants });
+  }
+
+  // 5. Update ride with driver assignment
+  let updatedRide;
   try {
     updatedRide = await Ride.findOneAndUpdate(
       { _id: rideId, rideStatus: 'requested' },
@@ -238,31 +258,33 @@ const acceptRide = async (rideId: string, driverId: string) => {
     );
   }
 
-  const rideAccept = true;
-  // ✅ Send notification with required rideId
+  // 6. Send notification to user
   try {
-    if (updatedRide.userId) {
-      await sendNotifications({
-        receiver: updatedRide.userId.toString(),
-        driverId: driverId.toString(),
-        rideId: updatedRide.id.toString(), // ✅ this is the fix!
-        text: 'Ride accepted successfully',
-        event: 'ride-accepted',
-        rideAccept: rideAccept,
-      });
-    } else {
-      console.warn('No userId found in updatedRide');
-    }
+    await sendNotifications({
+      receiver: userId,
+      driverId: driverId.toString(),
+      rideId: updatedRide.id.toString(),
+      chat: {
+        _id: chat._id,
+        participants: chat.participants,
+      },
+      text: 'Ride accepted successfully',
+      event: 'ride-accepted',
+      rideAccept: true,
+    });
   } catch (err) {
     console.error('Notification sending failed:', err);
   }
 
-  return updatedRide;
+  // 7. Return both ride and chat
+  return {
+    updatedRide,
+    chat,
+  };
 };
 
 // cancel ride
 
- 
 const cancelRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
 
@@ -338,7 +360,7 @@ const cancelRide = async (rideId: string, driverId: string) => {
   };
 };
 
-// continue rid 
+// continue rid
 const continueRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
   if (!ride) {

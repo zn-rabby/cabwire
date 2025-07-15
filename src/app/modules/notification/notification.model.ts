@@ -7,6 +7,24 @@ export const locationSchema = {
   address: { type: String },
 };
 
+// Chat subdocument schema for notification
+const notificationChatSchema = new Schema(
+  {
+    _id: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: 'Chat',
+    },
+    participants: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+      },
+    ],
+  },
+  { _id: false } // Prevent nested _id in this subdocument
+);
 
 const notificationSchema = new Schema<INotification, NotificationModel>(
   {
@@ -33,7 +51,6 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
       type: String,
       required: false,
     },
-
     screen: {
       type: String,
       required: false,
@@ -73,6 +90,12 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
     serviceName: {
       type: String,
       enum: ['car', 'emergency-car', 'rental-car', 'cabwire-share', 'package'],
+      required: false,
+    },
+
+    // Add chat as subdocument
+    chat: {
+      type: notificationChatSchema,
       required: false,
     },
   },

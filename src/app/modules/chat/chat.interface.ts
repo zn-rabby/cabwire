@@ -1,8 +1,12 @@
-import { Model, Types } from 'mongoose';
+import { Document, Types, Model } from 'mongoose';
 
-export type IChat = {
-  participants: [Types.ObjectId];
-  status: Boolean;
-};
+// ✅ Interface for a single Chat document
+export interface IChat extends Document {
+  participants: Types.ObjectId[]; // user and driver
+  status: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
-export type ChatModel = Model<IChat, Record<string, unknown>>;
+// ✅ ChatModel type
+export type ChatModel = Model<IChat>;

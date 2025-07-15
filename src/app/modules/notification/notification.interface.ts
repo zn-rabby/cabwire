@@ -1,9 +1,18 @@
+
 import { Model, Types } from 'mongoose';
+
+// আগের Location interface
 export interface ILocation {
   lat?: number;
   lng?: number;
   address?: string;
-} 
+}
+
+// Chat info for notification
+export interface INotificationChat {
+  _id: Types.ObjectId;
+  participants: Types.ObjectId[];
+}
 
 export type INotification = {
   text: string;
@@ -15,9 +24,9 @@ export type INotification = {
 
   // for ride
   driverId?: string;
-  rideId?: string;
-  packgeId?: string;
-  userId?: string;
+  rideId?: Types.ObjectId;
+  packgeId?: Types.ObjectId;
+  userId?: Types.ObjectId;
   pickupLocation?: ILocation;
   dropoffLocation?: ILocation;
   fare?: number;
@@ -32,6 +41,9 @@ export type INotification = {
     | 'cabwire-share'
     | 'package';
   rideProgress?: boolean;
+
+  // Add chat info here
+  chat?: INotificationChat;
 };
 
 export type NotificationModel = Model<INotification>;
