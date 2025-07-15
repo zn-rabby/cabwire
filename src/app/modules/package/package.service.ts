@@ -44,6 +44,7 @@ const createPackageToDB = async (
         (error instanceof Error ? error.message : '')
     );
   }
+  const serviceName = 'package';
 
   // 🧱 Build and save the package
   const packageData: Partial<IPackage> = {
@@ -84,6 +85,7 @@ const createPackageToDB = async (
       sendNotifications({
         text: 'New Package delivery request available',
         receiver: driverId,
+        serviceName,
         // packageId: createdPackage._id,
         // userId: createdPackage.userId,
         // receiver: driver._id, // socket room: driver-specific
