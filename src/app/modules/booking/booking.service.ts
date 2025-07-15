@@ -10,6 +10,7 @@ import generateOTP from '../../../util/generateOTP';
 import { User } from '../user/user.model';
 import { Payment } from '../payment/payment.model';
 import stripe from '../../../config/stripe';
+import { DailyEarning } from '../earning/erning.model';
 
 const createRideBookingToDB = async (
   payload: Partial<IRideBooking>,
@@ -426,6 +427,33 @@ const createCabwireOrBookingPayment = async (payload: {
         totalTrip: 1,
       },
     });
+    // ✅ Update DailyEarning Summary
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const methodBasedField =
+      method === 'stripe'
+        ? { onlinePaymentReceived: driverAmount }
+        : { cashPaymentReceived: driverAmount };
+
+    const updatedEarning = await DailyEarning.findOneAndUpdate(
+      { driverId, date: startOfDay },
+      {
+        $inc: {
+          todayTotalEarning: driverAmount,
+          ...methodBasedField,
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    // ✅ Recalculate Available Earning
+    if (updatedEarning) {
+      updatedEarning.todayAvailableEarning =
+        updatedEarning.todayTotalEarning - (updatedEarning.walletAmount || 0);
+
+      await updatedEarning.save();
+    }
   }
 
   // ✅ 7. Return result

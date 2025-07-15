@@ -31,6 +31,12 @@ const paymentSchema = new Schema<IPayment>(
     adminAmount: { type: Number, required: true },
     availableAmount: { type: Number, required: false },
     totalWithdorwAmount: { type: Number, required: false },
+    
+    todayAvailableEarning: { type: Number, required: false },
+    todayTotalEarning: { type: Number, required: false },
+    cashPaymentReceived: { type: Number, required: false },
+    onlinePaymentReceived: { type: Number, required: false },
+    walletAmount: { type: Number, required: false },
   },
   { timestamps: true }
 );

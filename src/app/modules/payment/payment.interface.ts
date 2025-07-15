@@ -20,4 +20,10 @@ export interface IPayment extends Document {
   availableAmount: number;
   totalWithdorwAmount: number;
   adminAmount: number;
+
+  todayAvailableEarning: number;
+  todayTotalEarning: number;
+  cashPaymentReceived: number;
+  onlinePaymentReceived: number;
+  walletAmount: number;
 }

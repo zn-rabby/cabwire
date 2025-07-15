@@ -11,6 +11,7 @@ import { RideBooking } from '../booking/booking.model';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
 import QueryBuilder from '../../builder/QueryBuilder';
+import { DailyEarning } from '../earning/erning.model';
 
 // ========================================== extra ===================================
 
@@ -206,31 +207,52 @@ const getStripeBalance = async () => {
 };
 
 const getAllPaymentsWithDriver = async () => {
-  // Step 1: Get all drivers with stripeAccountId
-  const drivers = await User.find({
-    role: 'DRIVER',
-    stripeAccountId: { $exists: true },
-  });
+  const drivers = await User.find({ role: 'DRIVER' });
 
   const earnings = [];
 
   for (const driver of drivers) {
-    // Step 2: Fetch balance transactions for each driver
-    const transactions = await stripe.balanceTransactions.list(
-      { limit: 100 }, // ✅ first param: filter options
-      { stripeAccount: driver.stripeAccountId } // ✅ second param: request options
-    );
+    // 🟠 Get Daily Earnings from DailyEarning model
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // Step 3: Sum the amounts
-    const totalEarning = transactions.data.reduce((sum, tx) => {
-      return sum + tx.amount; // amount is in cents
-    }, 0);
+    const todayEarning = await DailyEarning.findOne({
+      driverId: driver._id,
+      date: today,
+    });
+
+    const todayTotalEarning = todayEarning?.todayTotalEarning || 0;
+    const cashPaymentReceived = todayEarning?.cashPaymentReceived || 0;
+    const onlinePaymentReceived = todayEarning?.onlinePaymentReceived || 0;
+    const walletAmount = todayEarning?.walletAmount || 0;
+    const todayAvailableEarning = todayTotalEarning - walletAmount;
+
+    // 🟢 Get total earnings from Payment model
+    const allPayments = await Payment.find({
+      driverId: driver._id,
+      status: 'paid',
+    });
+
+    const totalOnlineEarning = allPayments
+      .filter(p => p.method === 'stripe')
+      .reduce((sum, p) => sum + p.driverAmount, 0);
+
+    const totalEarnings = allPayments.reduce(
+      (sum, p) => sum + p.driverAmount,
+      0
+    );
 
     earnings.push({
       driverId: driver._id,
       name: driver.name,
-      totalEarning: totalEarning / 100, // convert cents to dollar/taka
-      currency: transactions.data[0]?.currency || 'usd',
+      todayTotalEarning,
+      todayAvailableEarning,
+      cashPaymentReceived,
+      onlinePaymentReceived,
+      walletAmount,
+      totalOnlineEarning,
+      totalEarnings,
+      currency: 'usd', // optionally dynamic
     });
   }
 
@@ -368,7 +390,6 @@ const transferToDriver = async (payload: {
   const { driverId, amount } = payload;
 
   const driver = await User.findById(driverId);
-  console.log(driver);
   if (!driver || !driver.stripeAccountId) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -376,6 +397,27 @@ const transferToDriver = async (payload: {
     );
   }
 
+  // ড্রাইভারের সব earning রেকর্ড যেখানে available earning আছে
+  let remainingAmount = amount;
+
+  const earnings = await DailyEarning.find({
+    driverId,
+    todayAvailableEarning: { $gt: 0 },
+  }).sort({ date: 1 }); // পুরনো থেকে নতুন ক্রমে
+
+  const totalAvailable = earnings.reduce(
+    (sum, e) => sum + e.todayAvailableEarning,
+    0
+  );
+
+  if (totalAvailable < amount) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      `Insufficient balance. Available: $${totalAvailable}`
+    );
+  }
+
+  // Stripe Transfer
   const transfer = await stripe.transfers.create({
     amount: Math.round(amount * 100),
     currency: 'usd',
@@ -383,7 +425,29 @@ const transferToDriver = async (payload: {
     transfer_group: `group_driver_${driverId}`,
   });
 
-  return transfer;
+  // Now deduct from the earnings sequentially
+  for (const earning of earnings) {
+    if (remainingAmount <= 0) break;
+
+    const deductAmount = Math.min(
+      earning.todayAvailableEarning,
+      remainingAmount
+    );
+
+    earning.todayAvailableEarning -= deductAmount;
+    earning.walletAmount += deductAmount;
+
+    await earning.save();
+
+    remainingAmount -= deductAmount;
+  }
+
+  return {
+    success: true,
+    message: 'Transfer successful and earnings updated',
+    transfer,
+    remainingBalance: totalAvailable - amount,
+  };
 };
 
 export const PaymentService = {

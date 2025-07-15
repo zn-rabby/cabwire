@@ -13,6 +13,7 @@ import generateOTP from '../../../util/generateOTP';
 import stripe from '../../../config/stripe';
 import { Payment } from '../payment/payment.model';
 import { User } from '../user/user.model';
+import { DailyEarning } from '../earning/erning.model';
 
 const createPackageToDB = async (
   payload: Partial<IPackage>,
@@ -437,6 +438,33 @@ const createPackagePayment = async (payload: {
         totalAmountSpend: fare,
       },
     });
+    // ✅ Update DailyEarning Summary
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const methodBasedField =
+      method === 'stripe'
+        ? { onlinePaymentReceived: driverAmount }
+        : { cashPaymentReceived: driverAmount };
+
+    const updatedEarning = await DailyEarning.findOneAndUpdate(
+      { driverId, date: startOfDay },
+      {
+        $inc: {
+          todayTotalEarning: driverAmount,
+          ...methodBasedField,
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    // ✅ Recalculate Available Earning
+    if (updatedEarning) {
+      updatedEarning.todayAvailableEarning =
+        updatedEarning.todayTotalEarning - (updatedEarning.walletAmount || 0);
+
+      await updatedEarning.save();
+    }
   }
 
   return {

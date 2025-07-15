@@ -15,6 +15,7 @@ import stripe from '../../../config/stripe';
 import { Payment } from '../payment/payment.model';
 import { IChat } from '../chat/chat.interface';
 import { Chat } from '../chat/chat.model';
+import { DailyEarning } from '../earning/erning.model';
 
 // find nearest riders
 export const findNearestOnlineRiders = async (location: {
@@ -638,6 +639,34 @@ const createRidePayment = async (payload: Partial<IPayment>) => {
       { $inc: { adminRevenue: adminAmount } },
       { sort: { createdAt: 1 } }
     );
+
+    // ✅ Update DailyEarning Summary
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const methodBasedField =
+      method === 'stripe'
+        ? { onlinePaymentReceived: driverAmount }
+        : { cashPaymentReceived: driverAmount };
+
+    const updatedEarning = await DailyEarning.findOneAndUpdate(
+      { driverId, date: startOfDay },
+      {
+        $inc: {
+          todayTotalEarning: driverAmount,
+          ...methodBasedField,
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    // ✅ Recalculate Available Earning
+    if (updatedEarning) {
+      updatedEarning.todayAvailableEarning =
+        updatedEarning.todayTotalEarning - (updatedEarning.walletAmount || 0);
+
+      await updatedEarning.save();
+    }
 
     // ✅ Update User Stats
     await User.findByIdAndUpdate(userId, {
