@@ -12,41 +12,42 @@ import { startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
 import QueryBuilder from '../../builder/QueryBuilder';
 import { DailyEarning } from '../earning/erning.model';
+import { startOfDay } from 'date-fns';
 
 // ========================================== extra ===================================
 
 const stripe = new Stripe(config.stripe_secret_key as string);
 
-export async function createOrGetStripeAccount(
-  userId: string
-): Promise<string> {
-  const driver = await User.findById(userId);
+// export async function createOrGetStripeAccount(
+//   userId: string
+// ): Promise<string> {
+//   const driver = await User.findById(userId);
 
-  if (!driver) throw new Error('Driver not found');
+//   if (!driver) throw new Error('Driver not found');
 
-  if (driver.role !== 'DRIVER') {
-    throw new Error('Only drivers can create a Stripe account');
-  }
+//   if (driver.role !== 'DRIVER') {
+//     throw new Error('Only drivers can create a Stripe account');
+//   }
 
-  if (!driver.email) throw new Error('Driver email missing');
-  console.log(driver, driver.email);
+//   if (!driver.email) throw new Error('Driver email missing');
+//   console.log(driver, driver.email);
 
-  if (driver.stripeAccountId) return driver.stripeAccountId;
+//   if (driver.stripeAccountId) return driver.stripeAccountId;
 
-  const account = await stripe.accounts.create({
-    type: 'express',
-    email: driver.email,
-    capabilities: {
-      transfers: { requested: true }, // ✅ এই লাইনটা যোগ করো
-    },
-  });
+//   const account = await stripe.accounts.create({
+//     type: 'express',
+//     email: driver.email,
+//     capabilities: {
+//       transfers: { requested: true }, // ✅ এই লাইনটা যোগ করো
+//     },
+//   });
 
-  console.log(account);
+//   console.log(account);
 
-  await User.findByIdAndUpdate(userId, { stripeAccountId: account.id });
+//   await User.findByIdAndUpdate(userId, { stripeAccountId: account.id });
 
-  return account.id;
-}
+//   return account.id;
+// }
 
 // Generate Stripe onboarding link
 export async function createStripeOnboardingLink(
@@ -389,6 +390,7 @@ const transferToDriver = async (payload: {
 }) => {
   const { driverId, amount } = payload;
 
+  // Step 1: Get driver and check Stripe account
   const driver = await User.findById(driverId);
   if (!driver || !driver.stripeAccountId) {
     throw new ApiError(
@@ -397,56 +399,94 @@ const transferToDriver = async (payload: {
     );
   }
 
-  // ড্রাইভারের সব earning রেকর্ড যেখানে available earning আছে
-  let remainingAmount = amount;
-
-  const earnings = await DailyEarning.find({
+  // Step 2: Get all completed earnings for this driver
+  const earnings = await Payment.find({
     driverId,
-    todayAvailableEarning: { $gt: 0 },
-  }).sort({ date: 1 }); // পুরনো থেকে নতুন ক্রমে
+    status: 'paid',
+    method: 'stripe',
+    driverAmount: { $gt: 0 },
+  });
 
-  const totalAvailable = earnings.reduce(
-    (sum, e) => sum + e.todayAvailableEarning,
+  // Step 3: Sum all earned amounts from those payments
+  const totalEarnings = earnings.reduce(
+    (sum, p) => sum + (p.driverAmount || 0),
     0
   );
 
-  if (totalAvailable < amount) {
+  // Step 4: Get all past withdrawals by this driver
+  const withdrawals = await Payment.find({
+    driverId,
+    type: 'withdrawal',
+  });
+
+  const totalWithdrawn = withdrawals.reduce(
+    (sum, w) => sum + (w.amount || 0),
+    0
+  );
+
+  // Step 5: Calculate available balance
+  const availableBalance = totalEarnings - totalWithdrawn;
+
+  // Step 6: Check if sufficient balance exists
+  if (amount > availableBalance) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      `Insufficient balance. Available: $${totalAvailable}`
+      `Insufficient balance. Available: ${availableBalance.toFixed(2)}`
     );
   }
 
-  // Stripe Transfer
+  // Step 7: Perform Stripe transfer
   const transfer = await stripe.transfers.create({
-    amount: Math.round(amount * 100),
+    amount: Math.round(amount * 100), // cents
     currency: 'usd',
     destination: driver.stripeAccountId,
     transfer_group: `group_driver_${driverId}`,
   });
 
-  // Now deduct from the earnings sequentially
-  for (const earning of earnings) {
-    if (remainingAmount <= 0) break;
+  // Step 8: Create withdrawal payment record
+  const withdrawalPayment = await Payment.create({
+    driverId,
+    userId: driver._id,
+    amount,
+    adminAmount: 0,
+    driverAmount: amount,
+    transferId: transfer.id,
+    transferredAt: new Date(),
+    type: 'withdrawal',
+    status: 'paid',
+    method: 'stripe',
+  });
 
-    const deductAmount = Math.min(
-      earning.todayAvailableEarning,
-      remainingAmount
-    );
+  // Step 9: Update driver's total earnings without triggering pre-save hook
+  await User.findByIdAndUpdate(driverId, {
+    $inc: { driverTotalEarn: -amount },
+  });
 
-    earning.todayAvailableEarning -= deductAmount;
-    earning.walletAmount += deductAmount;
+  // Step 10: Update DailyEarning for today
+  const today = startOfDay(new Date());
 
-    await earning.save();
+  const dailyEarning = await DailyEarning.findOneAndUpdate(
+    { driverId, date: today },
+    {
+      $inc: {
+        todayAvailableEarning: -amount,
+        todayTotalEarning: 0, // No change to total earning on withdrawal
+        onlinePaymentReceived: 0, // Adjust if applicable
+        cashPaymentReceived: 0,
+        walletAmount: 0,
+      },
+    },
+    { upsert: true, new: true }
+  );
 
-    remainingAmount -= deductAmount;
-  }
-
+  // Step 11: Return success and new balance
   return {
     success: true,
-    message: 'Transfer successful and earnings updated',
+    message: 'Transfer successful',
     transfer,
-    remainingBalance: totalAvailable - amount,
+    remainingBalance: +(availableBalance - amount).toFixed(2),
+    withdrawalPayment,
+    dailyEarning,
   };
 };
 

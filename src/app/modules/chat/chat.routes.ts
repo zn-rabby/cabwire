@@ -14,6 +14,7 @@ router.post(
   ),
   ChatController.createChat
 );
+
 router.get(
   '/',
   auth(

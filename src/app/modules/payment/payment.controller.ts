@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import {
-  createOrGetStripeAccount,
+  // createOrGetStripeAccount,
   createStripeOnboardingLink,
   PaymentService,
 } from './payment.service';
@@ -57,19 +57,19 @@ const createAccountToStripe = catchAsync(
   }
 );
 
-const createConnectLink = async (req: Request, res: Response) => {
-  try {
-    const userId = req.user.id;
+// const createConnectLink = async (req: Request, res: Response) => {
+//   try {
+//     const userId = req.user.id;
 
-    const stripeAccountId = await createOrGetStripeAccount(userId);
-    const url = await createStripeOnboardingLink(stripeAccountId);
+//     const stripeAccountId = await createOrGetStripeAccount(userId);
+//     const url = await createStripeOnboardingLink(stripeAccountId);
 
-    res.json({ url });
-  } catch (error) {
-    console.error('Stripe Connect Error:', error);
-    res.status(500).json({ error: 'Stripe connect account creation failed' });
-  }
-};
+//     res.json({ url });
+//   } catch (error) {
+//     console.error('Stripe Connect Error:', error);
+//     res.status(500).json({ error: 'Stripe connect account creation failed' });
+//   }
+// };
 
 const checkStripeBalance = catchAsync(async (req: Request, res: Response) => {
   const { available, pending } = await PaymentService.getStripeBalance();
@@ -153,7 +153,7 @@ export const PaymentController = {
 
   // App
   createAccountToStripe,
-  createConnectLink,
+  // createConnectLink,
   checkStripeBalance,
 
   getAllPaymentsByUserId,
