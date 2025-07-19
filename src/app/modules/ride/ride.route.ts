@@ -43,6 +43,23 @@ router.patch(
   auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
   RideController.cancelRide
 );
+// ! start otp
+
+router.patch(
+  '/request-start-otp/:id',
+  auth(
+    USER_ROLES.ADMIN,
+    USER_ROLES.DRIVER,
+    USER_ROLES.USER,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  RideController.userStartOTPRide
+);
+router.post(
+  '/request-start-match-otp/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.USER),
+  RideController.userStartMatchOTPRide
+);
 
 router.patch(
   '/continue-ride-driver/:id',

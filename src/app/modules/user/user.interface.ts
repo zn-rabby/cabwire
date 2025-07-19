@@ -45,6 +45,7 @@ export type IUser = {
   adminRevenue?: number;
   totalTrip?: number;
   totalAmountSpend?: number;
+  driverWithdrawAmount?: number;
   isOnline: boolean;
   isDeleted: boolean;
 };

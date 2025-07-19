@@ -361,6 +361,117 @@ const cancelRide = async (rideId: string, driverId: string) => {
   };
 };
 
+// ! start otp
+// request colose ride
+const userStartOTPRide = async (rideId: string, driverId: string) => {
+  const ride = await Ride.findById(rideId);
+
+  if (!ride) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid ride or ride not in progress'
+    );
+  }
+  const otp = generateOTP();
+  // Save as string and mark as modified
+  ride.otp = otp;
+  ride.markModified('otp');
+  await ride.save();
+
+  console.log(
+    'Generated OTP for start ride:',
+    ride._id,
+    'OTP:',
+    ride.otp,
+    'Type:',
+    typeof ride.otp
+  );
+
+  return {
+    rideId: ride._id,
+    otp: ride.otp,
+  };
+};
+
+const userStartMatchOTPRide = async (rideId: string, enteredOtp: string) => {
+  console.log('Verifying OTP for ride:', rideId, 'with OTP:', enteredOtp);
+
+  // First check if ride exists and get current OTP
+  const ride = await Ride.findById(rideId).select('+otp'); // Explicitly include otp
+
+  if (!ride) {
+    console.log('Ride not found');
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not found');
+  }
+
+  console.log('Ride details:', {
+    rideId: ride._id,
+    status: ride.rideStatus,
+    storedOtp: ride.otp,
+    otpType: typeof ride.otp,
+    enteredOtp,
+    enteredOtpType: typeof enteredOtp,
+  });
+
+  // if (ride.rideStatus !== 'continue') {
+  //   throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not in progress');
+  // }
+
+  if (!ride.otp || ride.otp.toString().trim() === '') {
+    console.error('OTP missing in ride document');
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'No OTP generated for this ride'
+    );
+  }
+
+  // Compare as strings
+  if (ride.otp.toString() !== enteredOtp.toString()) {
+    console.log('OTP mismatch:', {
+      stored: ride.otp,
+      entered: enteredOtp,
+      storedType: typeof ride.otp,
+      enteredType: typeof enteredOtp,
+    });
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
+  }
+
+  // Use atomic update
+  const updatedRide = await Ride.findOneAndUpdate(
+    {
+      _id: rideId,
+      otp: ride.otp, // Ensure OTP hasn't changed
+      // rideStatus: 'continue',
+    },
+    {
+      // $set: { rideStatus: 'completed' },
+      $unset: { otp: '' },
+    },
+    { new: true }
+  );
+
+  if (!updatedRide) {
+    console.error('Concurrent modification detected');
+    throw new ApiError(
+      StatusCodes.CONFLICT,
+      'Ride state changed during verification'
+    );
+  }
+  const rideComplete = true;
+  // Emit ride-completed event
+  if (updatedRide._id) {
+    sendNotifications({
+      rideId: updatedRide._id,
+      receiver: updatedRide.userId,
+      text: 'Start OTP Match and Ride continue successfully',
+      rideComplete: rideComplete,
+    });
+  }
+
+  console.log('Ride completed successfully:', updatedRide._id);
+  return updatedRide;
+};
+
 // continue rid
 const continueRide = async (rideId: string, driverId: string) => {
   const ride = await Ride.findById(rideId);
@@ -698,6 +809,10 @@ export const RideService = {
   createRideToDB,
   acceptRide,
   cancelRide,
+  // ! start otp
+  userStartOTPRide,
+  userStartMatchOTPRide,
+
   continueRide,
   requestCloseRide,
   completeRideWithOtp,

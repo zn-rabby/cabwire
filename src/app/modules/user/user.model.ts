@@ -84,6 +84,7 @@ const userSchema = new Schema<IUser, UserModal>(
     adminRevenue: { type: Number, default: 0 },
     totalTrip: { type: Number, default: 0 },
     totalAmountSpend: { type: Number, default: 0 },
+    driverWithdrawAmount: { type: Number, default: 0 },
     verified: { type: Boolean, default: false },
     driverLicense: { type: driverLicenseSchema },
     driverVehicles: { type: driverVehicleSchema },

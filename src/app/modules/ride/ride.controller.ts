@@ -120,6 +120,49 @@ const cancelRide = catchAsync(async (req: Request, res: Response) => {
     data: ride,
   });
 });
+// ! start otp
+const userStartOTPRide = catchAsync(async (req: Request, res: Response) => {
+  const driverId = req.user?.id;
+  const rideId = req.params.id;
+
+  if (!driverId) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+
+  const data = await RideService.userStartOTPRide(rideId, driverId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'OTP generated successfully',
+    data,
+  });
+});
+const userStartMatchOTPRide = catchAsync(
+  async (req: Request, res: Response) => {
+    const { rideId, otp } = req.body;
+
+    // Validate input
+    if (!rideId || otp === undefined || otp === '') {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'Ride ID and OTP are required'
+      );
+    }
+
+    // Convert otp to string (don't convert to number)
+    const enteredOtp = otp.toString();
+
+    const ride = await RideService.userStartMatchOTPRide(rideId, enteredOtp);
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'OTP match and ride continue successfully',
+      data: ride,
+    });
+  }
+);
 
 const continueRide = catchAsync(async (req: Request, res: Response) => {
   const driverId = req.user?.id;
@@ -229,6 +272,10 @@ export const RideController = {
   createRide,
   acceptRide,
   cancelRide,
+  // ! start otp
+  userStartOTPRide,
+  userStartMatchOTPRide,
+
   continueRide,
   requestCloseRide,
   completeRideWithOtp,
