@@ -1,4 +1,4 @@
-import { Document, Types } from 'mongoose';
+import { Document, ObjectId, Types } from 'mongoose';
 
 export type RideStatus =
   | 'requested'
@@ -45,4 +45,13 @@ export interface ICabwire extends Document {
 
   // Availability
   setAvailable: number;
+  users?: [
+    {
+      userId: ObjectId;
+      seats: number;
+      otp: string;
+      isVerified: boolean;
+      bookingId: ObjectId; // optional: for reverse lookup
+    }
+  ];
 }

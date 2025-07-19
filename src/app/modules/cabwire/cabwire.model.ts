@@ -61,6 +61,15 @@ const CabwireSchema = new Schema<ICabwire>(
       enum: ['pending', 'paid', 'failed'],
       default: 'pending',
     },
+    users: [
+      {
+        userId: { type: Schema.Types.ObjectId, ref: 'User' },
+        seats: { type: Number, default: 1 },
+        otp: { type: String },
+        isVerified: { type: Boolean, default: true },
+        bookingId: { type: Schema.Types.ObjectId, ref: 'RideBooking' },
+      },
+    ],
   },
   {
     timestamps: true,

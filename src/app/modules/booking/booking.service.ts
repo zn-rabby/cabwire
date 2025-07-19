@@ -14,7 +14,7 @@ import { DailyEarning } from '../earning/erning.model';
 
 const createRideBookingToDB = async (
   payload: Partial<IRideBooking>,
-  userObjectId: Types.ObjectId // auth থেকে passenger userId
+  userObjectId: Types.ObjectId
 ) => {
   // Validation
   if (!payload.rideId) {
@@ -27,7 +27,7 @@ const createRideBookingToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, 'seatsBooked must be > 0');
   }
 
-  // রাইড ডাটাবেজ থেকে ফেচ করুন
+  // Fetch ride
   const ride = await CabwireModel.findById(payload.rideId);
   if (!ride) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Associated ride not found');
@@ -53,21 +53,21 @@ const createRideBookingToDB = async (
     );
   }
 
-  // এখানে driverId আসবে ride.driverId থেকে
+  // Get driver ID
   const driverId = ride.driverId;
 
-  // Booking data প্রস্তুত করুন
+  // Prepare booking data
   const bookingPayload: Partial<IRideBooking> = {
     ...payload,
     fare,
     distance,
-    userId: userObjectId, // auth থেকে passenger
-    driverId, // ride.driverId থেকে ড্রাইভার
+    userId: userObjectId,
+    driverId,
     rideStatus: 'accepted',
     paymentStatus: 'pending',
   };
 
-  // Booking তৈরি করুন
+  // Create booking
   const booking = await RideBooking.create(bookingPayload);
   if (!booking) {
     throw new ApiError(
@@ -76,22 +76,34 @@ const createRideBookingToDB = async (
     );
   }
 
-  // Ride এর seat কমান এবং status আপডেট করুন
+  // Generate user-specific OTP
+  // const otp = generateOTP().toString();
+
+  // Update ride: push to users[] and update seat availability
   await CabwireModel.findByIdAndUpdate(payload.rideId, {
+    $push: {
+      users: {
+        userId: userObjectId,
+        seats: payload.seatsBooked,
+        // otp,
+        isVerified: false,
+        bookingId: booking._id,
+      },
+    },
     $inc: { setAvailable: -payload.seatsBooked },
     rideStatus: 'accepted',
   });
 
-  // Booking এ ride populate করুন
+  // Populate ride data in booking
   const bookingWithRide = await RideBooking.findById(booking._id).populate(
     'rideId'
   );
 
-  // Notification পাঠান ড্রাইভারকে
+  // Notify driver
   sendNotifications({
     text: 'New ride booking accepted!',
     rideId: ride._id,
-    userId: driverId?.toString(), // ড্রাইভারকে জানানো হচ্ছে
+    userId: driverId?.toString(),
     receiver: driverId?.toString(),
     pickupLocation: ride.pickupLocation,
     dropoffLocation: ride.dropoffLocation,
@@ -103,6 +115,7 @@ const createRideBookingToDB = async (
 
   return bookingWithRide;
 };
+
 const cancelRide = async (rideId: string, driverId: string) => {
   const ride = await CabwireModel.findById(rideId);
 

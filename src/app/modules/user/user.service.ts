@@ -506,8 +506,8 @@ export const UserService = {
   updateUserOnlineStatusByEmail,
   deleteUser,
   verifyUserPassword,
-
   getSingleUserById,
+
   // user
   getAllUserQuery,
   getTotalUserCount,
