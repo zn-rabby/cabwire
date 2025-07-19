@@ -1,5 +1,7 @@
+
 import { Model, Types } from 'mongoose';
 
+// আগের Location interface
 export interface ILocation {
   lat?: number;
   lng?: number;
