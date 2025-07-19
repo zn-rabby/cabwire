@@ -21,6 +21,24 @@ router.patch(
   auth(USER_ROLES.DRIVER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   PackageController.acceptPackage
 );
+
+// ! start otp
+router.patch(
+  '/request-otp-continue-package/:id',
+  auth(
+    USER_ROLES.ADMIN,
+    USER_ROLES.DRIVER,
+    USER_ROLES.USER,
+    USER_ROLES.SUPER_ADMIN
+  ),
+  PackageController.requestStaratOTPPackage
+);
+router.post(
+  '/verify-package-otp-match/:id',
+  auth(USER_ROLES.ADMIN, USER_ROLES.DRIVER, USER_ROLES.DRIVER, USER_ROLES.USER),
+  PackageController.requestCompleteOTPPackage
+);
+
 router.patch(
   '/continue-package/:packageId',
   auth(USER_ROLES.DRIVER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),

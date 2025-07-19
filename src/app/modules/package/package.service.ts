@@ -139,6 +139,92 @@ const acceptPackageByDriver = async (
   return existing;
 };
 
+// ! start otp
+// request start ride otp
+const requestStaratOTPPackage = async (rideId: string, driverId: string) => {
+  const ride = await PackageModel.findById(rideId);
+
+  if (!ride) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Invalid ride or ride not in progress'
+    );
+  }
+
+  const otp = generateOTP();
+
+  // Save as string and mark as modified
+  ride.otp = otp.toString();
+  ride.markModified('otp'); // Explicitly mark the field as modified
+  await ride.save();
+
+  console.log(
+    'Generated OTP for ride:',
+    ride._id,
+    'OTP:',
+    ride.otp,
+    'Type:',
+    typeof ride.otp
+  );
+
+  return {
+    rideId: ride._id,
+    otp: ride.otp,
+  };
+};
+
+// complete ride with otp
+const requestCompleteOTPPackage = async (
+  rideId: string,
+  enteredOtp: string
+) => {
+  console.log('Verifying OTP for ride:', rideId, 'with OTP:', enteredOtp);
+
+  const ride = await PackageModel.findById(rideId).select('+otp');
+
+  if (!ride) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not found');
+  }
+
+  if (!ride.otp || ride.otp.toString().trim() === '') {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'No OTP generated for this ride'
+    );
+  }
+
+  if (ride.otp.toString() !== enteredOtp.toString()) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
+  }
+
+  // ✅ FIXED: Correct status condition for atomic update
+  const updatedRide = await PackageModel.findOneAndUpdate(
+    {
+      _id: rideId,
+      otp: ride.otp,
+    },
+    {
+      $unset: { otp: '' },
+    },
+    { new: true }
+  );
+
+  if (!updatedRide) {
+    throw new ApiError(
+      StatusCodes.CONFLICT,
+      'Ride state changed during verification'
+    );
+  }
+
+  sendNotifications({
+    rideId: updatedRide._id,
+    receiver: updatedRide._id,
+    text: 'Package OTP match start successfully',
+  });
+
+  return updatedRide;
+};
+
 const continuePackageDeliver = async (
   packageId: string,
   driverId: Types.ObjectId
@@ -479,6 +565,11 @@ export const PackageService = {
   createPackageToDB,
   acceptPackageByDriver,
   continuePackageDeliver,
+
+  // ! start otp
+  requestStaratOTPPackage,
+  requestCompleteOTPPackage,
+
   markPackageAsDelivered,
   requestClosePackage,
   completePackageWithOtp,

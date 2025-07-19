@@ -54,6 +54,55 @@ const acceptPackage = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const requestStaratOTPPackage = catchAsync(
+  async (req: Request, res: Response) => {
+    const driverId = req.user?.id;
+    const rideId = req.params.id;
+
+    if (!driverId) {
+      throw new ApiError(StatusCodes.UNAUTHORIZED, 'Unauthorized');
+    }
+
+    const data = await PackageService.requestStaratOTPPackage(rideId, driverId);
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'Package Delevery OTP generated successfully',
+      data,
+    });
+  }
+);
+
+const requestCompleteOTPPackage = catchAsync(
+  async (req: Request, res: Response) => {
+    const { rideId, otp } = req.body;
+
+    // Validate input
+    if (!rideId || otp === undefined || otp === '') {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        'Ride ID and OTP are required'
+      );
+    }
+
+    // Convert otp to string (don't convert to number)
+    const enteredOtp = otp.toString();
+
+    const ride = await PackageService.requestCompleteOTPPackage(
+      rideId,
+      enteredOtp
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: 'OTP match and Package start delevery successfully',
+      data: ride,
+    });
+  }
+);
+
 const continuePackage = catchAsync(async (req: Request, res: Response) => {
   const driverId = req.user?.id;
   const packageId = req.params.packageId;
@@ -179,6 +228,11 @@ export const PackageController = {
   createPackage,
   acceptPackage,
   continuePackage,
+
+  // ! start otp
+  requestStaratOTPPackage,
+  requestCompleteOTPPackage,
+
   markAsDelivered,
   requestClosePackage,
   completePackageeWithOtp,
