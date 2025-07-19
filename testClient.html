@@ -1,222 +1,147 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Driver Ride Request Test</title>
-  <style>
-    body {
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cabwire Account Verification</title>
+  </head>
+  <body
+    style="
       font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
+      background-color: #f5f7fa;
+      margin: 0;
       padding: 20px;
-    }
-    #log-container {
-      background: #f5f5f5;
-      padding: 15px;
-      border-radius: 5px;
-      height: 300px;
-      overflow-y: auto;
-      margin: 20px 0;
-      border: 1px solid #ddd;
-    }
-    .log-entry {
-      margin-bottom: 10px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid #eee;
-    }
-    .log-entry:last-child {
-      border-bottom: none;
-    }
-    button {
-      padding: 8px 15px;
-      margin-right: 10px;
-      background: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #45a049;
-    }
-    #offline-btn {
-      background: #f44336;
-    }
-    #offline-btn:hover {
-      background: #d32f2f;
-    }
-    .status-indicator {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin-right: 5px;
-    }
-    .online {
-      background: #4CAF50;
-    }
-    .offline {
-      background: #f44336;
-    }
-  </style>
-</head>
-<body>
-  <h1>🚖 Driver Ride Request Test</h1>
-  
-  <div>
-    <span class="status-indicator offline" id="status-indicator"></span>
-    <span id="status-text">Disconnected</span>
-  </div>
-  
-  <div id="driver-info" style="margin: 15px 0; display: none;">
-    <h3>Driver Information</h3>
-    <p><strong>ID:</strong> <span id="driver-id"></span></p>
-    <p><strong>Status:</strong> <span id="driver-status">Offline</span></p>
-    <p><strong>Last Online:</strong> <span id="last-online">-</span></p>
-  </div>
+      color: #333;
+    "
+  >
+    <div
+      style="
+        width: 100%;
+        max-width: 600px;
+        margin: 20px auto;
+        padding: 30px;
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      "
+    >
+      <div style="text-align: center; margin-bottom: 25px">
+        <img
+          src="https://res.cloudinary.com/dm8gdzghf/image/upload/v1752922273/Group_1_qvaemd.png"
+          alt="Cabwire Logo"
+          style="height: 50px"
+        />
+      </div>
 
-  <div id="controls" style="margin: 20px 0;">
-    <button id="connect-btn">Connect as Driver</button>
-    <button id="offline-btn" disabled>Go Offline</button>
-    <button id="test-request-btn" disabled>Simulate Ride Request</button>
-  </div>
+      <h2
+        style="
+          color: #012f9e;
+          font-size: 24px;
+          margin-bottom: 10px;
+          text-align: center;
+        "
+      >
+        Welcome to Cabwire!
+      </h2>
 
-  <h3>Event Log</h3>
-  <div id="log-container"></div>
+      <p
+        style="
+          color: #555;
+          font-size: 16px;
+          line-height: 1.5;
+          margin-bottom: 25px;
+          text-align: center;
+        "
+      >
+        Hi <strong style="color: #012f9e">Zulkar</strong>, here's your
+        verification code for your Cabwire account:
+      </p>
 
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-  <script>
-    const socket = io('http://10.0.60.114:5005', {
-      autoConnect: false,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000
-    });
+      <div
+        style="
+          background-color: #012f9e;
+          width: 200px;
+          padding: 15px;
+          text-align: center;
+          border-radius: 8px;
+          color: #fff;
+          font-size: 28px;
+          font-weight: bold;
+          letter-spacing: 3px;
+          margin: 0 auto 25px;
+          box-shadow: 0 4px 8px rgba(1, 47, 158, 0.2);
+        "
+      >
+        728395
+      </div>
 
-    // DOM elements
-    const statusIndicator = document.getElementById('status-indicator');
-    const statusText = document.getElementById('status-text');
-    const driverIdEl = document.getElementById('driver-id');
-    const driverStatusEl = document.getElementById('driver-status');
-    const lastOnlineEl = document.getElementById('last-online');
-    const logContainer = document.getElementById('log-container');
-    const connectBtn = document.getElementById('connect-btn');
-    const offlineBtn = document.getElementById('offline-btn');
-    const testRequestBtn = document.getElementById('test-request-btn');
+      <p
+        style="
+          color: #666;
+          font-size: 15px;
+          line-height: 1.5;
+          margin-bottom: 30px;
+          text-align: center;
+        "
+      >
+        This verification code will expire in
+        <strong style="color: #fd6d12">3 minutes</strong>.<br />
+        Please don't share this code with anyone.
+      </p>
 
-    // Driver state
-    let driverId = 'driver_' + Math.random().toString(36).substr(2, 9);
-    let isOnline = false;
+      <div
+        style="
+          border-top: 1px solid #eee;
+          padding-top: 20px;
+          text-align: center;
+        "
+      >
+        <p style="color: #888; font-size: 14px; margin-bottom: 5px">
+          Need help? Contact our support team
+        </p>
+        <a
+          href="mailto:support@cabwire.com"
+          style="color: #fd6d12; text-decoration: none; font-weight: bold"
+        >
+          support@cabwire.com
+        </a>
+      </div>
 
-    // Logging function
-    function addLog(message, type = 'info') {
-      const logEntry = document.createElement('div');
-      logEntry.className = `log-entry ${type}`;
-      logEntry.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
-      logContainer.appendChild(logEntry);
-      logContainer.scrollTop = logContainer.scrollHeight;
-    }
+      <div style="text-align: center; margin-top: 25px">
+        <a href="#" style="display: inline-block; margin: 0 10px">
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/124/124010.png"
+            alt="Facebook"
+            style="width: 30px"
+          />
+        </a>
+        <a href="#" style="display: inline-block; margin: 0 10px">
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/733/733579.png"
+            alt="Twitter"
+            style="width: 30px"
+          />
+        </a>
+        <a href="#" style="display: inline-block; margin: 0 10px">
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png"
+            alt="Instagram"
+            style="width: 30px"
+          />
+        </a>
+      </div>
 
-    // Update UI state
-    function updateConnectionStatus(connected) {
-      statusIndicator.className = `status-indicator ${connected ? 'online' : 'offline'}`;
-      statusText.textContent = connected ? 'Connected' : 'Disconnected';
-    }
-
-    function updateDriverStatus(online) {
-      isOnline = online;
-      driverStatusEl.textContent = online ? 'Online' : 'Offline';
-      lastOnlineEl.textContent = new Date().toLocaleString();
-      offlineBtn.disabled = !online;
-      testRequestBtn.disabled = !online;
-    }
-
-    // Socket event handlers
-    socket.on('connect', () => {
-      updateConnectionStatus(true);
-      addLog('✅ Connected to socket server');
-      
-      // Join as driver
-      socket.emit('driver-online', driverId);
-      addLog(`Driver ${driverId} joined their room`);
-      
-      document.getElementById('driver-info').style.display = 'block';
-      driverIdEl.textContent = driverId;
-      updateDriverStatus(true);
-    });
-
-    socket.on('disconnect', () => {
-      updateConnectionStatus(false);
-      addLog('❌ Disconnected from server');
-      updateDriverStatus(false);
-    });
-
-    socket.on('error', (error) => {
-      addLog(`⚠️ Socket Error: ${error}`, 'error');
-    });
-
-    socket.on('ride-requested', (data) => {
-      addLog('🚖 New Ride Request Received:', 'event');
-      addLog(`- Ride ID: ${data.rideId}`);
-      addLog(`- User ID: ${data.userId}`);
-      addLog(`- Pickup: ${JSON.stringify(data.pickupLocation)}`);
-      addLog(`- Dropoff: ${JSON.stringify(data.dropoffLocation)}`);
-      addLog(`- Fare: $${data.fare}`);
-      addLog(`- Distance: ${data.distance} km`);
-      addLog(`- Duration: ${data.duration} mins`);
-
-      // Simulate accepting the ride
-      setTimeout(() => {
-        addLog('⏳ Simulating ride acceptance...');
-        socket.emit('accept-ride', {
-          rideId: data.rideId,
-          driverId: driverId
-        });
-      }, 3000);
-    });
-
-    socket.on('ride-status-updated', (data) => {
-      addLog(`🔔 Ride Status Update: ${data.status} for ride ${data.rideId}`, 'event');
-    });
-
-    socket.on('driver-status-changed', (data) => {
-      addLog(`👨‍✈️ Driver Status Change: ${data.status}`, 'event');
-    });
-
-    // Button handlers
-    connectBtn.addEventListener('click', () => {
-      if (socket.connected) {
-        addLog('Already connected');
-        return;
-      }
-      addLog('Connecting to server...');
-      socket.connect();
-    });
-
-    offlineBtn.addEventListener('click', () => {
-      socket.emit('driver-offline', driverId);
-      addLog(`Driver ${driverId} going offline`);
-      updateDriverStatus(false);
-    });
-
-    testRequestBtn.addEventListener('click', () => {
-      // Simulate receiving a ride request (for testing without backend)
-      const testData = {
-        rideId: 'ride_' + Math.random().toString(36).substr(2, 9),
-        userId: 'user_' + Math.random().toString(36).substr(2, 9),
-        pickupLocation: { lat: 40.7128, lng: -74.0060 },
-        dropoffLocation: { lat: 40.7328, lng: -73.9860 },
-        status: 'requested',
-        fare: 15.50,
-        distance: 3.2,
-        duration: 12
-      };
-      socket.emit('ride-requested', testData);
-      addLog('Sent test ride request', 'test');
-    });
-
-    // Initialize
-    updateConnectionStatus(false);
-    addLog('Ready to connect. Click "Connect as Driver" to begin.');
-  </script>
-</body>
+      <p
+        style="
+          color: #999;
+          font-size: 12px;
+          text-align: center;
+          margin-top: 25px;
+        "
+      >
+        © 2023 Cabwire. All rights reserved.<br />
+        123 Delivery Street, Suite 100, Tech City
+      </p>
+    </div>
+  </body>
 </html>
