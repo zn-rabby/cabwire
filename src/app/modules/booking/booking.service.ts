@@ -227,7 +227,10 @@ const continueRide = async (rideId: string, driverId: string) => {
 };
 
 // request colose ride
-const requestCloseRide = async (rideId: string, driverId: string) => {
+const requestCloseRide = async (
+  rideId: string,
+  userId: string // logged-in userId (passenger)
+) => {
   const ride = await CabwireModel.findById(rideId);
 
   if (!ride || ride.rideStatus !== 'continue') {
@@ -241,24 +244,41 @@ const requestCloseRide = async (rideId: string, driverId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'No users found in this ride');
   }
 
-  // Generate OTP per user
-  ride.users = ride.users.map(userObj => ({
-    ...userObj.toObject?.(), // make sure it's a plain object
-    otp: generateOTP().toString(),
-    isVerified: false,
-  }));
+  let otpForCurrentUser: string | null = null;
+
+  // ✅ Only update OTP for the matching logged-in user
+  ride.users = ride.users.map(userObj => {
+    const userPlain = userObj.toObject?.() ?? userObj;
+
+    if (userPlain.userId.toString() === userId.toString()) {
+      const newOtp = generateOTP().toString();
+      otpForCurrentUser = newOtp;
+
+      return {
+        ...userPlain,
+        otp: newOtp,
+        isVerified: false,
+      };
+    }
+
+    return userPlain; // unchanged for other users
+  });
 
   ride.markModified('users');
   await ride.save();
 
-  console.log('✅ Close OTPs generated for ride:', ride._id);
+  if (!otpForCurrentUser) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'User not part of this ride');
+  }
 
   return {
     rideId: ride._id,
-    otps: ride.users.map(({ userId, otp }) => ({
-      userId,
-      otp,
-    })),
+    otps: [
+      {
+        userId,
+        otp: otpForCurrentUser,
+      },
+    ],
   };
 };
 
