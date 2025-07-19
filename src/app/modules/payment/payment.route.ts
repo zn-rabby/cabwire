@@ -36,12 +36,7 @@ router.post(
   ),
   PaymentController.createAccountToStripe
 );
-// connect account
-// router.post(
-//   '/create-connect-link',
-//   auth(USER_ROLES.DRIVER),
-//   PaymentController.createConnectLink
-// );
+ 
 
 // check balance
 router.get('/check-balance', PaymentController.checkStripeBalance);

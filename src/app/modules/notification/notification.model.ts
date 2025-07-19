@@ -92,8 +92,7 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
       enum: ['car', 'emergency-car', 'rental-car', 'cabwire-share', 'package'],
       required: false,
     },
-
-    // Add chat as subdocument
+ 
     chat: {
       type: notificationChatSchema,
       required: false,

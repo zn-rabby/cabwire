@@ -12,7 +12,7 @@ export interface IReview {
   updatedAt?: Date;
 }
 
-// Optional: add static methods if needed
+ 
 export type ReviewModel = Model<IReview>;
 
 export interface IRateableService extends Document {

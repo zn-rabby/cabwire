@@ -17,9 +17,7 @@ const createContactUsService = async (payload: TContactUs, userId: any) => {
 };
 
 const getAllContactUsService = async (query: Record<string, unknown>) => {
-  const allContactUs = new QueryBuilder(ContactUs.find({}), query)
-    .sort()
-    .paginate();
+  const allContactUs = new QueryBuilder(ContactUs.find({}), query).paginate();
 
   const result = await allContactUs.modelQuery;
   const meta = await allContactUs.countTotal();

@@ -7,7 +7,7 @@ import mongoose, { Types } from 'mongoose';
 import ApiError from '../../../errors/ApiError';
 
 const createRideBooking = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user?.id; // auth থেকে
+  const userId = req.user?.id;  
 
   if (!userId) {
     throw new ApiError(
@@ -18,7 +18,7 @@ const createRideBooking = catchAsync(async (req: Request, res: Response) => {
 
   const result = await RideBookingService.createRideBookingToDB(
     req.body,
-    new mongoose.Types.ObjectId(userId) // auth থেকে passenger userId
+    new mongoose.Types.ObjectId(userId)  
   );
 
   sendResponse(res, {

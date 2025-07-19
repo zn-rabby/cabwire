@@ -50,11 +50,7 @@ const rideSchema = new Schema<IRide>(
       enum: ['pending', 'paid', 'failed'],
       default: 'pending',
     },
-    // rideType: {
-    //   type: String,
-    //   enum: ['Car', 'EmergencyCar', 'RentalCar'],
-    //   default: 'Car',
-    // },
+
     rejectedDrivers: [
       { type: Schema.Types.ObjectId, ref: 'User', index: true },
     ],

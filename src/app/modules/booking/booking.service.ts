@@ -466,29 +466,6 @@ const createCabwireOrBookingPayment = async (payload: {
   console.log('🔥 Payment created:', payment._id);
   console.log('💳 Payment status:', paymentStatus);
 
-  // ✅ 6. Only handle stats if offline (Stripe will be handled via webhook)
-  // if (paymentStatus === 'paid') {
-  //   await CabwireModel.findByIdAndUpdate(sourceId, {
-  //     paymentStatus: 'paid',
-  //   });
-
-  //   await User.findByIdAndUpdate(driverId, {
-  //     $inc: { driverTotalEarn: driverAmount },
-  //   });
-
-  //   await User.updateOne(
-  //     { role: 'admin' },
-  //     { $inc: { adminRevenue: adminAmount } },
-  //     { sort: { createdAt: 1 } }
-  //   );
-
-  //   await User.findByIdAndUpdate(userId, {
-  //     $inc: {
-  //       totalAmountSpend: fare,
-  //       totalTrip: 1,
-  //     },
-  //   });
-  // }
   if (paymentStatus === 'paid') {
     ride.paymentStatus = 'paid';
     await ride.save();

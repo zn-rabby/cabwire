@@ -1,13 +1,10 @@
 import { Payment } from './payment.model';
 import ApiError from '../../../errors/ApiError';
 import { StatusCodes } from 'http-status-codes';
-import { isValidObjectId } from 'mongoose';
 import Stripe from 'stripe';
 import config from '../../../config';
 import { User } from '../user/user.model';
 import { JwtPayload } from 'jsonwebtoken';
-import { CabwireModel } from '../cabwire/cabwire.model';
-import { RideBooking } from '../booking/booking.model';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import mongoose from 'mongoose';
 import QueryBuilder from '../../builder/QueryBuilder';
@@ -76,10 +73,9 @@ const getAllPayments = async (query: Record<string, unknown>) => {
       ), // ✅ Populate driver info + nested fields
     query
   )
-    .search(['transactionId']) // 🔍 Only Payment fields
-    // .filter() // includes month/year or startDate/endDate filter now
-    .filters() // includes month/year or startDate/endDate filter now
-    .sort('-createdAt') // 🕒 Latest first
+    .search(['transactionId'])
+    .filters()
+    .sort('-createdAt')
     .paginate()
     .fields();
 
@@ -90,7 +86,7 @@ const getAllPayments = async (query: Record<string, unknown>) => {
 };
 
 const getAllEarninng = async () => {
-  const payments = await Payment.find(); // 🔄 সব পেমেন্ট আনো, status বাদ
+  const payments = await Payment.find();
 
   let totalAmount = 0;
   let totalDriverAmount = 0;
@@ -253,7 +249,7 @@ const getAllPaymentsWithDriver = async () => {
       walletAmount,
       totalOnlineEarning,
       totalEarnings,
-      currency: 'usd', // optionally dynamic
+      currency: 'usd',
     });
   }
 
@@ -334,8 +330,6 @@ export const transferToStripeAccount = async (
     );
   }
 
-  // ইউজার খুঁজে নাও
-  // const user = await User.findById(userId);
   const user = await User.findById(userId).select('+stripeAccountId');
 
   if (!user) {
@@ -351,7 +345,6 @@ export const transferToStripeAccount = async (
     );
   }
 
-  // ইউজারের পেমেন্টস গুলো নিয়ে আসো
   const { totalDriverAmount, totalAdminAmount } = await getAllPaymentsByUserId(
     userId
   );
@@ -364,19 +357,12 @@ export const transferToStripeAccount = async (
     );
   }
 
-  // Stripe payout logic (Direct Transfer to Connected Account)
-  // নিচে `stripe.transfers.create` ইউজারকে টাকা পাঠাবে
-  // amount-টা cents এ দিতে হবে, তাই multiply 100 করলাম
-
   const transfer = await stripe.transfers.create({
     amount: Math.round(amount * 100), // cents
     currency: 'usd', // তোমার currency অনুযায়ী পরিবর্তন করো
     destination: user.stripeAccountId, // ইউজারের Stripe connected account ID
     description: `Withdraw payment for user ${userId}`,
   });
-
-  // এখানে চাইলে Payment অথবা Withdraw collection আপডেট করো
-  // উদাহরণ: withdraw রেকর্ড add করা বা Payment status update
 
   return {
     message: 'Amount transferred to Stripe account successfully',

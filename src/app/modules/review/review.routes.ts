@@ -4,12 +4,7 @@ import { USER_ROLES } from '../../../enums/user';
 import { ReviewController } from './review.controller';
 const router = express.Router();
 
-router.post(
-  '/',
-  //   validateRequest(ReviewValidation.reviewZodSchema),
-  auth(USER_ROLES.USER),
-  ReviewController.createReview
-);
+router.post('/', auth(USER_ROLES.USER), ReviewController.createReview);
 router.get('/:id', auth(USER_ROLES.USER), ReviewController.getReview);
 router.get(
   '/service/:serviceId',

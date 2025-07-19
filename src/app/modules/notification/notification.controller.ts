@@ -4,8 +4,6 @@ import sendResponse from '../../../shared/sendResponse';
 import { StatusCodes } from 'http-status-codes';
 import { NotificationService } from './notification.service';
 
-
-
 const getNotificationFromDB = catchAsync(
   async (req: Request, res: Response) => {
     const user = req.user;
@@ -58,7 +56,7 @@ const adminReadNotification = catchAsync(
   }
 );
 
-export const NotificationController = { 
+export const NotificationController = {
   adminNotificationFromDB,
   getNotificationFromDB,
   readNotification,

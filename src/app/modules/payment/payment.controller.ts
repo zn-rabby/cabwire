@@ -1,9 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import {
-  // createOrGetStripeAccount,
-  createStripeOnboardingLink,
-  PaymentService,
-} from './payment.service';
+import { Request, Response } from 'express';
+import { PaymentService } from './payment.service';
 import catchAsync from '../../../shared/catchAsync';
 import { StatusCodes } from 'http-status-codes';
 import sendResponse from '../../../shared/sendResponse';
@@ -21,7 +17,7 @@ const getAllPayments = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllEarninng = catchAsync(async (req: Request, res: Response) => {
-  const payments = await PaymentService.getAllEarninng(); // ঠিকভাবে সার্ভিস কল
+  const payments = await PaymentService.getAllEarninng();
   res.status(200).json({
     success: true,
     statusCode: 200,
@@ -31,7 +27,7 @@ const getAllEarninng = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getTotalRevenue = catchAsync(async (req: Request, res: Response) => {
-  const payments = await PaymentService.getTotalRevenue(); // ঠিকভাবে সার্ভিস কল
+  const payments = await PaymentService.getTotalRevenue();
   res.status(200).json({
     success: true,
     statusCode: 200,
@@ -56,20 +52,6 @@ const createAccountToStripe = catchAsync(
     });
   }
 );
-
-// const createConnectLink = async (req: Request, res: Response) => {
-//   try {
-//     const userId = req.user.id;
-
-//     const stripeAccountId = await createOrGetStripeAccount(userId);
-//     const url = await createStripeOnboardingLink(stripeAccountId);
-
-//     res.json({ url });
-//   } catch (error) {
-//     console.error('Stripe Connect Error:', error);
-//     res.status(500).json({ error: 'Stripe connect account creation failed' });
-//   }
-// };
 
 const checkStripeBalance = catchAsync(async (req: Request, res: Response) => {
   const { available, pending } = await PaymentService.getStripeBalance();
@@ -153,7 +135,6 @@ export const PaymentController = {
 
   // App
   createAccountToStripe,
-  // createConnectLink,
   checkStripeBalance,
 
   getAllPaymentsByUserId,
