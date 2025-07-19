@@ -98,23 +98,30 @@ const requestCloseRide = catchAsync(async (req: Request, res: Response) => {
 });
 
 const completeRideWithOtp = catchAsync(async (req: Request, res: Response) => {
-  const { rideId, otp } = req.body;
+  const rideId = req.params.id;
+  const userId = req.user?.id;
+  const { otp } = req.body;
 
-  // Validate input
-  if (!rideId || otp === undefined || otp === '') {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride ID and OTP are required');
+  if (!rideId || !otp || !userId) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      'Ride ID, OTP and User ID are required'
+    );
   }
 
-  // Convert otp to string (don't convert to number)
   const enteredOtp = otp.toString();
 
-  const ride = await RideBookingService.completeRideWithOtp(rideId, enteredOtp);
+  const result = await RideBookingService.completeRideWithOtp(
+    rideId,
+    userId,
+    enteredOtp
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: 'Ride completed successfully',
-    data: ride,
+    message: result.message,
+    data: result,
   });
 });
 

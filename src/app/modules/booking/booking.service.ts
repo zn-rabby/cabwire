@@ -283,83 +283,91 @@ const requestCloseRide = async (
 };
 
 // complete ride with otp
-const completeRideWithOtp = async (rideId: string, enteredOtp: string) => {
-  console.log('Verifying OTP for ride:', rideId, 'with OTP:', enteredOtp);
+const completeRideWithOtp = async (
+  rideId: string,
+  userId: string,
+  enteredOtp: string
+) => {
+  console.log('🔐 Verifying OTP for ride:', rideId, 'by user:', userId);
 
-  // First check if ride exists and get current OTP
-  const ride = await CabwireModel.findById(rideId).select('+otp'); // Explicitly include otp
+  const ride = await CabwireModel.findById(rideId);
 
   if (!ride) {
-    console.log('Ride not found');
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not found');
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Ride not found');
   }
-
-  console.log('Ride details:', {
-    rideId: ride._id,
-    status: ride.rideStatus,
-    storedOtp: ride.otp,
-    otpType: typeof ride.otp,
-    enteredOtp,
-    enteredOtpType: typeof enteredOtp,
-  });
 
   if (ride.rideStatus !== 'continue') {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Ride not in progress');
   }
 
-  if (!ride.otp || ride.otp.toString().trim() === '') {
-    console.error('OTP missing in ride document');
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      'No OTP generated for this ride'
-    );
+  if (!Array.isArray(ride.users) || ride.users.length === 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'No users in this ride');
   }
 
-  // Compare as strings
-  if (ride.otp.toString() !== enteredOtp.toString()) {
-    console.log('OTP mismatch:', {
-      stored: ride.otp,
-      entered: enteredOtp,
-      storedType: typeof ride.otp,
-      enteredType: typeof enteredOtp,
-    });
+  // Fix: Make sure ObjectId and string are compared properly
+  let userFound = false;
+  let otpMatched = false;
+
+  // Update the specific user's otp verification
+  ride.users = ride.users.map(userObj => {
+    const currentUserId =
+      typeof userObj.userId === 'object'
+        ? userObj.userId.toString()
+        : userObj.userId;
+
+    if (currentUserId === userId) {
+      userFound = true;
+
+      if (userObj.otp === enteredOtp) {
+        otpMatched = true;
+        return {
+          ...userObj,
+          isVerified: true,
+        };
+      }
+    }
+
+    return userObj;
+  });
+
+  if (!userFound) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'User not part of this ride');
+  }
+
+  if (!otpMatched) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid OTP');
   }
 
-  // Use atomic update
-  const updatedRide = await CabwireModel.findOneAndUpdate(
-    {
-      _id: rideId,
-      otp: ride.otp, // Ensure OTP hasn't changed
-      rideStatus: 'continue',
-    },
-    {
-      $set: { rideStatus: 'completed' },
-      $unset: { otp: '' },
-    },
-    { new: true }
-  );
+  ride.markModified('users');
+  await ride.save();
 
-  if (!updatedRide) {
-    console.error('Concurrent modification detected');
-    throw new ApiError(
-      StatusCodes.CONFLICT,
-      'Ride state changed during verification'
-    );
-  }
+  // Optional: only complete if all users are verified
+  const allVerified = ride.users.every(u => u.isVerified === true);
 
-  // Emit ride-completed event
-  if (updatedRide._id) {
+  if (allVerified) {
+    ride.rideStatus = 'completed';
+    ride.markModified('rideStatus');
+    await ride.save();
+
     sendNotifications({
-      // event: 'ride-completed',
-      rideId: updatedRide._id,
-      receiver: updatedRide._id,
+      rideId: ride._id,
+      receiver: ride._id,
       text: 'Ride completed successfully',
     });
   }
 
-  console.log('Ride completed successfully:', updatedRide._id);
-  return updatedRide;
+  console.log('✅ OTP verified:', {
+    rideId: ride._id,
+    completed: allVerified,
+  });
+
+  return {
+    rideId: ride._id,
+    completed: allVerified,
+    message: allVerified
+      ? 'Ride completed successfully'
+      : 'OTP verified, waiting for others',
+  };
 };
 
 const createCabwireOrBookingPayment = async (payload: {
