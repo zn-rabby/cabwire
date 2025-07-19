@@ -14,7 +14,7 @@ import { DailyEarning } from '../earning/erning.model';
 
 const createRideBookingToDB = async (
   payload: Partial<IRideBooking>,
-  userObjectId: Types.ObjectId
+  userObjectId: Types.ObjectId // auth থেকে passenger userId
 ) => {
   // Validation
   if (!payload.rideId) {
@@ -27,7 +27,7 @@ const createRideBookingToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, 'seatsBooked must be > 0');
   }
 
-  // Fetch ride
+  // রাইড ডাটাবেজ থেকে ফেচ করুন
   const ride = await CabwireModel.findById(payload.rideId);
   if (!ride) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Associated ride not found');
@@ -53,21 +53,21 @@ const createRideBookingToDB = async (
     );
   }
 
-  // Get driver ID
+  // এখানে driverId আসবে ride.driverId থেকে
   const driverId = ride.driverId;
 
-  // Prepare booking data
+  // Booking data প্রস্তুত করুন
   const bookingPayload: Partial<IRideBooking> = {
     ...payload,
     fare,
     distance,
-    userId: userObjectId,
-    driverId,
+    userId: userObjectId, // auth থেকে passenger
+    driverId, // ride.driverId থেকে ড্রাইভার
     rideStatus: 'accepted',
     paymentStatus: 'pending',
   };
 
-  // Create booking
+  // Booking তৈরি করুন
   const booking = await RideBooking.create(bookingPayload);
   if (!booking) {
     throw new ApiError(
@@ -76,34 +76,22 @@ const createRideBookingToDB = async (
     );
   }
 
-  // Generate user-specific OTP
-  // const otp = generateOTP().toString();
-
-  // Update ride: push to users[] and update seat availability
+  // Ride এর seat কমান এবং status আপডেট করুন
   await CabwireModel.findByIdAndUpdate(payload.rideId, {
-    $push: {
-      users: {
-        userId: userObjectId,
-        seats: payload.seatsBooked,
-        // otp,
-        isVerified: false,
-        bookingId: booking._id,
-      },
-    },
     $inc: { setAvailable: -payload.seatsBooked },
     rideStatus: 'accepted',
   });
 
-  // Populate ride data in booking
+  // Booking এ ride populate করুন
   const bookingWithRide = await RideBooking.findById(booking._id).populate(
     'rideId'
   );
 
-  // Notify driver
+  // Notification পাঠান ড্রাইভারকে
   sendNotifications({
     text: 'New ride booking accepted!',
     rideId: ride._id,
-    userId: driverId?.toString(),
+    userId: driverId?.toString(), // ড্রাইভারকে জানানো হচ্ছে
     receiver: driverId?.toString(),
     pickupLocation: ride.pickupLocation,
     dropoffLocation: ride.dropoffLocation,
@@ -138,7 +126,6 @@ const cancelRide = async (rideId: string, driverId: string) => {
       driverId,
     });
   }
-
   return ride;
 };
 
@@ -184,6 +171,38 @@ const continueRide = async (rideId: string, driverId: string) => {
 };
 
 // request colose ride
+// const requestCloseRide = async (rideId: string, driverId: string) => {
+//   const ride = await CabwireModel.findById(rideId);
+
+//   if (!ride || ride.rideStatus !== 'continue') {
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       'Invalid ride or ride not in progress'
+//     );
+//   }
+
+//   const otp = generateOTP();
+
+//   // Save as string and mark as modified
+//   ride.otp = otp.toString();
+//   ride.markModified('otp'); // Explicitly mark the field as modified
+//   await ride.save();
+
+//   console.log(
+//     'Generated OTP for ride:',
+//     ride._id,
+//     'OTP:',
+//     ride.otp,
+//     'Type:',
+//     typeof ride.otp
+//   );
+
+//   return {
+//     rideId: ride._id,
+//     otp: ride.otp,
+//   };
+// };
+
 const requestCloseRide = async (rideId: string, driverId: string) => {
   const ride = await CabwireModel.findById(rideId);
 
@@ -194,25 +213,28 @@ const requestCloseRide = async (rideId: string, driverId: string) => {
     );
   }
 
-  const otp = generateOTP();
+  if (!Array.isArray(ride.users) || ride.users.length === 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'No users found in this ride');
+  }
 
-  // Save as string and mark as modified
-  ride.otp = otp.toString();
-  ride.markModified('otp'); // Explicitly mark the field as modified
+  // Generate OTP per user
+  ride.users = ride.users.map(userObj => ({
+    ...userObj.toObject?.(), // make sure it's a plain object
+    otp: generateOTP().toString(),
+    isVerified: false,
+  }));
+
+  ride.markModified('users');
   await ride.save();
 
-  console.log(
-    'Generated OTP for ride:',
-    ride._id,
-    'OTP:',
-    ride.otp,
-    'Type:',
-    typeof ride.otp
-  );
+  console.log('✅ Close OTPs generated for ride:', ride._id);
 
   return {
     rideId: ride._id,
-    otp: ride.otp,
+    otps: ride.users.map(({ userId, otp }) => ({
+      userId,
+      otp,
+    })),
   };
 };
 

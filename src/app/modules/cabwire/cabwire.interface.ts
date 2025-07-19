@@ -45,13 +45,12 @@ export interface ICabwire extends Document {
 
   // Availability
   setAvailable: number;
-  users?: [
-    {
-      userId: ObjectId;
-      seats: number;
-      otp: string;
-      isVerified: boolean;
-      bookingId: ObjectId; // optional: for reverse lookup
-    }
-  ];
+  users?: {
+    [x: string]: any;
+    userId: ObjectId;
+    seats: number;
+    otp: string;
+    isVerified: boolean;
+    bookingId: ObjectId;
+  }[];
 }
